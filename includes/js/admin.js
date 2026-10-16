@@ -25,7 +25,12 @@ jQuery(document).ready(function ($) {
             qrs = JSON.parse(rawVal);
         }
     } catch (e) {
-        console.error('Failed to parse QR accounts data: ', e);
+        try {
+            var decoded = $('<textarea/>').html(rawVal).text();
+            qrs = JSON.parse(decoded);
+        } catch (e2) {
+            console.error('Failed to parse QR accounts data: ', e2);
+        }
     }
 
     if (!Array.isArray(qrs)) {
@@ -469,16 +474,55 @@ jQuery(document).ready(function ($) {
         }
     });
 
+    function hexToRgba(hex, alpha) {
+        if (!hex) return 'rgba(10, 105, 75, ' + alpha + ')';
+        var clean = hex.replace('#', '');
+        if (clean.length === 3) {
+            clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+        }
+        var r = parseInt(clean.substring(0, 2), 16) || 10;
+        var g = parseInt(clean.substring(2, 4), 16) || 105;
+        var b = parseInt(clean.substring(4, 6), 16) || 75;
+        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+    }
+
+    function adjustColorBrightness(hex, percent) {
+        if (!hex) return '#07523a';
+        var clean = hex.replace('#', '');
+        if (clean.length === 3) {
+            clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+        }
+        var num = parseInt(clean, 16);
+        var amt = Math.round(2.55 * percent);
+        var r = (num >> 16) + amt;
+        var g = ((num >> 8) & 0x00ff) + amt;
+        var b = (num & 0x0000ff) + amt;
+        return '#' + (0x1000000 + (r < 255 ? (r < 0 ? 0 : r) : 255) * 0x10000 + (g < 255 ? (g < 0 ? 0 : g) : 255) * 0x100 + (b < 255 ? (b < 0 ? 0 : b) : 255)).toString(16).slice(1);
+    }
+
     // Sync theme accent color picker
     $(document).on('input change', '#woocommerce_oi_banglaqr_theme_color', function () {
         var val = $(this).val();
         $('#banglaqr-theme-color-swatch').css('background-color', val);
         $('#banglaqr-theme-color-hex').val(val);
+
+        var wrap = document.querySelector('.banglaqr-admin-dashboard-wrap');
+        if (wrap) {
+            wrap.style.setProperty('--banglaqr-primary', val);
+            wrap.style.setProperty('--banglaqr-primary-hover', adjustColorBrightness(val, -15));
+            wrap.style.setProperty('--banglaqr-primary-light', hexToRgba(val, 0.08));
+            wrap.style.setProperty('--banglaqr-primary-border', hexToRgba(val, 0.25));
+        }
     });
 
     $(document).on('click', '#banglaqr-theme-color-swatch, .banglaqr-color-trigger-btn', function (e) {
         e.preventDefault();
         $('#woocommerce_oi_banglaqr_theme_color').trigger('click');
+    });
+
+    // Ensure table data is freshly serialized on settings form submission
+    $(document).on('submit', 'form#mainform, form', function () {
+        serializeData();
     });
 
     // Initial render

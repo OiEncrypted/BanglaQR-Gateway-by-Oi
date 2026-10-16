@@ -5,8 +5,19 @@
 
 defined('ABSPATH') || exit;
 
+#[\AllowDynamicProperties]
 class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 {
+    public $theme_color;
+    public $order_status;
+    public $receipt_rule;
+    public $trxid_rule;
+    public $enable_manual_payment;
+    public $manual_bkash;
+    public $manual_nagad;
+    public $manual_rocket;
+    public $manual_upay;
+    public $manual_cellfin;
 
     /**
      * Constructor
@@ -36,12 +47,13 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         add_action('wp_enqueue_scripts', array($this, 'enqueue_checkout_assets'));
         add_action('woocommerce_checkout_process', array($this, 'validate_checkout_fields'));
 
-        // AJAX hooks for slip upload
-        add_action('wp_ajax_oi_banglaqr_upload_slip', array($this, 'ajax_upload_slip'));
-        add_action('wp_ajax_nopriv_oi_banglaqr_upload_slip', array($this, 'ajax_upload_slip'));
-
         // Output modal in footer
         add_action('wp_footer', array($this, 'render_modal_html'));
+
+        // Thank You page, Customer My Account, and Order Emails
+        add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page_content'));
+        add_action('woocommerce_order_details_after_order_table', array($this, 'view_order_receipt_content'), 10, 1);
+        add_action('woocommerce_email_after_order_table', array($this, 'email_instructions'), 10, 4);
     }
 
     /**
@@ -52,6 +64,37 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
     public function get_id()
     {
         return $this->id;
+    }
+
+    /**
+     * Get the currently active QR account from settings.
+     *
+     * @param array|null $settings Optional settings array.
+     * @return array
+     */
+    public static function get_active_qr($settings = null)
+    {
+        if ($settings === null) {
+            $settings = get_option('woocommerce_oi_banglaqr_settings', array());
+        }
+
+        $qrs_table = isset($settings['qrs_table']) ? $settings['qrs_table'] : array();
+        if (!is_array($qrs_table) || empty($qrs_table)) {
+            return array(
+                'qr_name'        => 'BanglaQR (Primary)',
+                'qr_code_url'    => OI_BANGLAQR_URL . 'includes/img/testqr.png',
+                'payment_charge' => '1',
+                'is_active'      => 'yes',
+            );
+        }
+
+        foreach ($qrs_table as $qr) {
+            if (isset($qr['is_active']) && $qr['is_active'] === 'yes') {
+                return $qr;
+            }
+        }
+
+        return $qrs_table[0];
     }
 
     /**
@@ -104,7 +147,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 'title' => __('Theme Accent Color', 'banglaqr-payment-gateway-by-oi'),
                 'type' => 'color',
                 'description' => __('Choose the accent color for popup buttons and highlights to match your store theme.', 'banglaqr-payment-gateway-by-oi'),
-                'default' => '#137833',
+                'default' => '#0A694B',
                 'desc_tip' => true,
             ),
             'order_status' => array(
@@ -199,7 +242,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             $gateway_logo = OI_BANGLAQR_URL . 'assets/logo.jpg';
         }
         $description = $this->get_option('description', '');
-        $theme_color = $this->get_option('theme_color', '#137833');
+        $theme_color = $this->get_option('theme_color', '#0A694B');
         
         $order_status = $this->get_option('order_status', 'on-hold');
         $receipt_rule = $this->get_option('receipt_rule', 'optional');
@@ -213,25 +256,11 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         $manual_cellfin = $this->get_option('manual_cellfin', '');
         
         $qrs = $this->get_option('qrs_table', array());
-
+        $active_qr = self::get_active_qr($this->settings);
+        $active_qr_name = !empty($active_qr['qr_name']) ? $active_qr['qr_name'] : __('None Selected', 'banglaqr-payment-gateway-by-oi');
+        $active_qr_fee = isset($active_qr['payment_charge']) ? $active_qr['payment_charge'] : '0';
         if (!is_array($qrs) || empty($qrs)) {
-            $qrs = array(
-                array(
-                    'qr_name' => 'Test QR',
-                    'qr_code_url' => OI_BANGLAQR_URL . 'includes/img/testqr.png',
-                    'payment_charge' => '1',
-                    'is_active' => 'yes',
-                )
-            );
-        }
-        $active_qr_name = __('None Selected', 'banglaqr-payment-gateway-by-oi');
-        $active_qr_fee = '0';
-        foreach ($qrs as $q) {
-            if (isset($q['is_active']) && $q['is_active'] === 'yes') {
-                $active_qr_name = !empty($q['qr_name']) ? $q['qr_name'] : __('Active QR', 'banglaqr-payment-gateway-by-oi');
-                $active_qr_fee = isset($q['payment_charge']) ? $q['payment_charge'] : '0';
-                break;
-            }
+            $qrs = array($active_qr);
         }
 
         $configured_manual_count = 0;
@@ -288,6 +317,25 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                     </div>
                 </div>
             </div>
+
+            <?php
+            $is_block_checkout = false;
+            if (function_exists('has_block') && function_exists('wc_get_page_id')) {
+                $checkout_page_id = wc_get_page_id('checkout');
+                if ($checkout_page_id > 0 && has_block('woocommerce/checkout', $checkout_page_id)) {
+                    $is_block_checkout = true;
+                }
+            }
+            if ($is_block_checkout):
+            ?>
+            <div class="banglaqr-blocks-notice" style="margin: 18px 0; padding: 14px 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <div style="font-size: 13px; color: #1e3a8a; line-height: 1.55;">
+                    <strong style="display:block; margin-bottom: 2px;"><?php esc_html_e('WooCommerce Checkout Blocks Detected', 'banglaqr-payment-gateway-by-oi'); ?></strong>
+                    <?php esc_html_e('Your store is currently using the Gutenberg Checkout Block. BanglaQR Gateway provides an interactive scan-to-pay modal and verified receipt uploader which operates with the WooCommerce Classic Checkout shortcode [woocommerce_checkout]. If BanglaQR does not display on your checkout page, please edit your Checkout page and replace the block with the Classic Checkout shortcode.', 'banglaqr-payment-gateway-by-oi'); ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Unified Settings Sections -->
             <div class="banglaqr-settings-panel">
@@ -684,7 +732,12 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
      */
     public function enqueue_checkout_assets()
     {
-        if (!is_checkout() || !WC()->cart || !$this->is_available()) {
+        $is_thankyou   = function_exists('is_order_received_page') && is_order_received_page();
+        $is_view_order = function_exists('is_view_order_page') && is_view_order_page();
+        $is_pay_page   = function_exists('is_checkout_pay_page') && is_checkout_pay_page();
+        $is_checkout   = function_exists('is_checkout') && is_checkout();
+
+        if (!$is_checkout && !$is_thankyou && !$is_view_order) {
             return;
         }
 
@@ -694,41 +747,38 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         $js_ver  = file_exists(OI_BANGLAQR_PATH . 'includes/js/banglaqr-frontend.js') ? filemtime(OI_BANGLAQR_PATH . 'includes/js/banglaqr-frontend.js') : OI_BANGLAQR_VERSION;
 
         wp_enqueue_style($handle, OI_BANGLAQR_URL . 'includes/css/banglaqr-frontend.css', array(), $css_ver);
+
+        // On thank you and view order pages, we only need the CSS for receipt styling
+        if ($is_thankyou || $is_view_order) {
+            return;
+        }
+
+        if (!$this->is_available()) {
+            return;
+        }
+
         wp_enqueue_script($handle, OI_BANGLAQR_URL . 'includes/js/banglaqr-frontend.js', array('jquery'), $js_ver, true);
 
         // Find active QR code from settings
         $settings = $this->settings;
-        $qrs_table = isset($settings['qrs_table']) ? $settings['qrs_table'] : array();
-
-        if (!is_array($qrs_table) || empty($qrs_table)) {
-            $qrs_table = array(
-                array(
-                    'qr_name' => 'Test QR',
-                    'qr_code_url' => OI_BANGLAQR_URL . 'includes/img/testqr.png',
-                    'payment_charge' => '1',
-                    'is_active' => 'yes',
-                )
-            );
-        }
-
-        $active_qr = null;
-        if (is_array($qrs_table) && !empty($qrs_table)) {
-            foreach ($qrs_table as $qr) {
-                if (isset($qr['is_active']) && $qr['is_active'] === 'yes') {
-                    $active_qr = $qr;
-                    break;
-                }
-            }
-            // Fallback: if none is active, use the first one
-            if (!$active_qr && !empty($qrs_table)) {
-                $active_qr = $qrs_table[0];
-            }
-        }
-
+        $active_qr = self::get_active_qr($settings);
         $charge_percent = ($active_qr && isset($active_qr['payment_charge'])) ? floatval($active_qr['payment_charge']) : 0;
 
-        // Formatted total respecting store decimal settings
-        $total_amount = WC()->cart->total;
+        // Formatted total respecting store decimal settings and order-pay context
+        $total_amount = 0;
+        if ($is_pay_page) {
+            global $wp;
+            $pay_order_id = isset($wp->query_vars['order-pay']) ? absint($wp->query_vars['order-pay']) : 0;
+            if ($pay_order_id > 0) {
+                $pay_order = wc_get_order($pay_order_id);
+                if ($pay_order) {
+                    $total_amount = $pay_order->get_total();
+                }
+            }
+        } elseif (function_exists('WC') && WC()->cart) {
+            $total_amount = WC()->cart->total;
+        }
+
         $formatted_total = html_entity_decode(wp_strip_all_tags(wc_price($total_amount)));
         $raw_numeric_total = number_format(floatval($total_amount), function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2, '.', '');
 
@@ -743,7 +793,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             'upload_nonce' => wp_create_nonce('oi_banglaqr_upload_slip_action'),
             'active_qr' => $active_qr,
             'gateway_id' => $this->id,
-            'theme_color' => isset($settings['theme_color']) ? $settings['theme_color'] : '#137833',
+            'theme_color' => isset($settings['theme_color']) && !empty($settings['theme_color']) ? $settings['theme_color'] : '#0A694B',
             'max_file_size' => $allowed_max_size,
             'text_max_file_size' => $allowed_max_size_mb . 'MB',
             'paymentpage_img_url' => OI_BANGLAQR_URL . 'includes/img/banglaqr-paymentpage.png',
@@ -820,6 +870,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         ?>
                 <div id="banglaqr-checkout-fields-container">
                     <input type="hidden" name="oi_banglaqr_receipt_id" id="oi_banglaqr_receipt_id" value="" />
+                    <input type="hidden" name="oi_banglaqr_receipt_token" id="oi_banglaqr_receipt_token" value="" />
                     <input type="hidden" name="oi_banglaqr_transaction_id" id="oi_banglaqr_transaction_id" value="" />
                     <input type="hidden" name="oi_banglaqr_selected_qr" id="oi_banglaqr_selected_qr" value="" />
                     <input type="hidden" name="oi_banglaqr_confirmed" id="oi_banglaqr_confirmed" value="0" />
@@ -858,6 +909,18 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 }
             }
         }
+    }
+
+    /**
+     * WooCommerce core method to validate fields before order processing.
+     * Supported across both classic checkout and pay-for-order pages.
+     *
+     * @return bool
+     */
+    public function validate_fields()
+    {
+        $this->validate_checkout_fields();
+        return function_exists('wc_notice_count') ? (wc_notice_count('error') === 0) : true;
     }
 
     /**
@@ -906,69 +969,8 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             'image/gif'  => 'gif',
         );
 
-        // 1. Process Base64 payload if provided
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        if (!empty($_POST['image_base64'])) {
-            $base64_data = wp_unslash($_POST['image_base64']);
-            if (preg_match('/^data:image\/(jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+\/=\s]+)$/', $base64_data, $matches)) {
-                $ext = strtolower($matches[1]);
-                if ($ext === 'jpeg') {
-                    $ext = 'jpg';
-                }
-                $decoded = base64_decode($matches[2]);
-
-                if ($decoded !== false) {
-                    $tmp_name = wp_tempnam('receipt');
-                    file_put_contents($tmp_name, $decoded);
-                    $image_info = @getimagesize($tmp_name);
-                    @unlink($tmp_name);
-
-                    if (!$image_info || empty($image_info['mime']) || !array_key_exists($image_info['mime'], $allowed_mimes)) {
-                        wp_send_json_error(array('message' => __('Please upload a valid image file (JPEG, PNG, or WebP).', 'banglaqr-payment-gateway-by-oi')));
-                    }
-
-                    // Format check: enforce valid image extension matching detected image format
-                    $ext = $allowed_mimes[$image_info['mime']];
-
-                    // Preserve original user filename if passed
-                    $raw_name = !empty($_POST['image_name']) ? sanitize_text_field(wp_unslash($_POST['image_name'])) : 'receipt';
-                    $info = pathinfo($raw_name);
-                    $orig_base = !empty($info['filename']) ? $info['filename'] : 'receipt';
-                    $orig_ext  = !empty($info['extension']) ? strtolower($info['extension']) : $ext;
-                    if (!in_array($orig_ext, array('jpg', 'jpeg', 'png', 'webp', 'gif'), true)) {
-                        $orig_ext = $ext;
-                    }
-
-                    $clean_base = sanitize_file_name($orig_base);
-                    if (empty($clean_base) || $clean_base === '.') {
-                        $clean_base = 'receipt_' . substr(md5($orig_base), 0, 8);
-                    }
-                    $filename_to_save = $clean_base . '.' . $orig_ext;
-
-                    $upload = wp_upload_bits($filename_to_save, null, $decoded);
-
-                    if (!empty($upload['error'])) {
-                        wp_send_json_error(array('message' => $upload['error']));
-                    }
-
-                    $filename = $upload['file'];
-                    $wp_filetype = wp_check_filetype($filename, null);
-                    $mime_type = !empty($wp_filetype['type']) ? $wp_filetype['type'] : $image_info['mime'];
-
-                    $attachment = array(
-                        'post_mime_type' => $mime_type,
-                        'post_title'     => $orig_base,
-                        'post_content'   => '',
-                        'post_status'    => 'inherit',
-                    );
-
-                    $attachment_id = wp_insert_attachment($attachment, $filename);
-                }
-            }
-        }
-
-        // 2. Standard $_FILES handling (Multipart Form Data)
-        if (!$attachment_id && !empty($_FILES['oi_banglaqr_file'])) {
+        // 1. Standard $_FILES handling (Multipart Form Data - Preferred & Fastest)
+        if (!empty($_FILES['oi_banglaqr_file'])) {
             $file = $_FILES['oi_banglaqr_file']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 
             if (!empty($file['error'])) {
@@ -1005,8 +1007,6 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             }
 
             // Keep user's original filename, only sanitizing for filesystem safety.
-            // If sanitize_file_name strips all non-ASCII characters (e.g. purely Bengali text),
-            // fallback gracefully so the server filesystem can save it properly.
             $clean_base = sanitize_file_name($orig_base);
             if (empty($clean_base) || $clean_base === '.') {
                 $clean_base = 'receipt_' . substr(md5($orig_base), 0, 8);
@@ -1016,7 +1016,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
             $overrides = array(
                 'test_form' => false,
-                'test_type' => false, // Strict binary format check already performed above
+                'test_type' => false,
                 'mimes'     => array(
                     'jpg|jpeg|jpe' => 'image/jpeg',
                     'gif'          => 'image/gif',
@@ -1052,12 +1052,70 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
             $attachment = array(
                 'post_mime_type' => $mime_type,
-                'post_title'     => $orig_base, // Keep user's original filename as title
+                'post_title'     => $orig_base,
                 'post_content'   => '',
                 'post_status'    => 'inherit',
             );
 
             $attachment_id = wp_insert_attachment($attachment, $filename);
+        }
+
+        // 2. Fallback: Process Base64 payload only if no multipart file was received
+        if (!$attachment_id && !empty($_POST['image_base64'])) {
+            $base64_data = wp_unslash($_POST['image_base64']);
+            if (preg_match('/^data:image\/(jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+\/=\s]+)$/', $base64_data, $matches)) {
+                $ext = strtolower($matches[1]);
+                if ($ext === 'jpeg') {
+                    $ext = 'jpg';
+                }
+                $decoded = base64_decode($matches[2]);
+
+                if ($decoded !== false) {
+                    $tmp_name = wp_tempnam('receipt');
+                    file_put_contents($tmp_name, $decoded);
+                    $image_info = @getimagesize($tmp_name);
+                    @unlink($tmp_name);
+
+                    if (!$image_info || empty($image_info['mime']) || !array_key_exists($image_info['mime'], $allowed_mimes)) {
+                        wp_send_json_error(array('message' => __('Please upload a valid image file (JPEG, PNG, or WebP).', 'banglaqr-payment-gateway-by-oi')));
+                    }
+
+                    $ext = $allowed_mimes[$image_info['mime']];
+
+                    $raw_name = !empty($_POST['image_name']) ? sanitize_text_field(wp_unslash($_POST['image_name'])) : 'receipt';
+                    $info = pathinfo($raw_name);
+                    $orig_base = !empty($info['filename']) ? $info['filename'] : 'receipt';
+                    $orig_ext  = !empty($info['extension']) ? strtolower($info['extension']) : $ext;
+                    if (!in_array($orig_ext, array('jpg', 'jpeg', 'png', 'webp', 'gif'), true)) {
+                        $orig_ext = $ext;
+                    }
+
+                    $clean_base = sanitize_file_name($orig_base);
+                    if (empty($clean_base) || $clean_base === '.') {
+                        $clean_base = 'receipt_' . substr(md5($orig_base), 0, 8);
+                    }
+                    $filename_to_save = $clean_base . '.' . $orig_ext;
+
+                    $upload = wp_upload_bits($filename_to_save, null, $decoded);
+
+                    if (!empty($upload['error'])) {
+                        wp_send_json_error(array('message' => $upload['error']));
+                    }
+
+                    $filename = $upload['file'];
+                    $wp_filetype = wp_check_filetype($filename, null);
+                    $mime_type = !empty($wp_filetype['type']) ? $wp_filetype['type'] : $image_info['mime'];
+
+                    $attachment = array(
+                        'post_mime_type' => $mime_type,
+                        'post_title'     => $orig_base,
+                        'post_content'   => '',
+                        'post_status'    => 'inherit',
+                    );
+
+                    $attachment_id = wp_insert_attachment($attachment, $filename);
+                }
+            }
         }
 
         if (!$attachment_id || is_wp_error($attachment_id)) {
@@ -1081,10 +1139,16 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         if (!empty($session_token)) {
             update_post_meta($attachment_id, '_oi_banglaqr_uploader_token', $session_token);
         }
+        if (is_user_logged_in()) {
+            update_post_meta($attachment_id, '_oi_banglaqr_uploader_user_id', get_current_user_id());
+        }
+
+        $receipt_token = wp_create_nonce('oi_banglaqr_receipt_' . $attachment_id);
 
         wp_send_json_success(array(
             'id'            => $attachment_id,
             'attachment_id' => $attachment_id,
+            'token'         => $receipt_token,
             'url'           => wp_get_attachment_url($attachment_id),
         ));
     }
@@ -1109,19 +1173,26 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             // phpcs:ignore WordPress.Security.NonceVerification.Missing
             $candidate_id = absint(wp_unslash($_POST['oi_banglaqr_receipt_id']));
 
-            // Security check: Only bind attachment if it was uploaded in this customer's active session
+            // Security check: Only bind attachment if it was uploaded in this customer's active session or matches signed token
             if ($candidate_id > 0) {
                 $receipt_post = get_post($candidate_id);
                 if ($receipt_post && $receipt_post->post_type === 'attachment' && (int)$receipt_post->post_parent === 0) {
                     if (get_post_meta($candidate_id, '_oi_banglaqr_pending_upload', true) === '1') {
-                        $uploader_token = get_post_meta($candidate_id, '_oi_banglaqr_uploader_token', true);
-                        $session_token  = WC()->session ? WC()->session->get('oi_banglaqr_session_token') : '';
+                        $uploader_token   = get_post_meta($candidate_id, '_oi_banglaqr_uploader_token', true);
+                        $uploader_user_id = (int) get_post_meta($candidate_id, '_oi_banglaqr_uploader_user_id', true);
+                        $session_token    = (function_exists('WC') && WC()->session) ? WC()->session->get('oi_banglaqr_session_token') : '';
+                        $receipt_token    = !empty($_POST['oi_banglaqr_receipt_token']) ? sanitize_key(wp_unslash($_POST['oi_banglaqr_receipt_token'])) : '';
 
-                        if (!empty($uploader_token) && !empty($session_token) && hash_equals((string)$uploader_token, (string)$session_token)) {
+                        $is_token_valid = (!empty($uploader_token) && !empty($session_token) && hash_equals((string)$uploader_token, (string)$session_token));
+                        $is_nonce_valid = (!empty($receipt_token) && wp_verify_nonce($receipt_token, 'oi_banglaqr_receipt_' . $candidate_id));
+                        $is_user_valid  = (is_user_logged_in() && $uploader_user_id > 0 && $uploader_user_id === get_current_user_id());
+
+                        if ($is_token_valid || $is_nonce_valid || $is_user_valid) {
                             $receipt_id = $candidate_id;
                             $order->update_meta_data('_oi_banglaqr_receipt_id', $receipt_id);
 
-                            // Set the attachment as media parent of this order
+                            // Set the attachment as media parent of this order and link to order ID for HPOS
+                            update_post_meta($receipt_id, '_oi_banglaqr_order_id', $order_id);
                             wp_update_post(array(
                                 'ID'          => $receipt_id,
                                 'post_parent' => $order_id,
@@ -1129,6 +1200,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             // Remove pending mark so cleanup cron will not delete it
                             delete_post_meta($receipt_id, '_oi_banglaqr_pending_upload');
                             delete_post_meta($receipt_id, '_oi_banglaqr_uploader_token');
+                            delete_post_meta($receipt_id, '_oi_banglaqr_uploader_user_id');
                         }
                     }
                 }
@@ -1169,15 +1241,22 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             $order_note .= ' (' . implode(' | ', $note_details) . ')';
         }
 
-        // Set order status based on admin configuration
+        // Explicitly persist order metadata (essential for HPOS & order-pay screens)
+        $order->save();
+
+        // Set order status based on admin configuration (automatically triggers stock handling safely)
         $order_status = $this->get_option('order_status', 'on-hold');
-        $order->update_status($order_status, $order_note);
+        if ($order->get_status() !== $order_status) {
+            $order->update_status($order_status, $order_note);
+        } else {
+            $order->add_order_note($order_note);
+            $order->save();
+        }
 
-        // Reduce stock levels
-        wc_reduce_stock_levels($order_id);
-
-        // Clear cart
-        WC()->cart->empty_cart();
+        // Clear cart safely if present
+        if (function_exists('WC') && WC()->cart) {
+            WC()->cart->empty_cart();
+        }
 
         // Return thank you redirect
         return array(
@@ -1191,42 +1270,47 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
      */
     public function render_modal_html()
     {
-        if (!is_checkout() || !WC()->cart || !$this->is_available()) {
+        $is_pay_page   = function_exists('is_checkout_pay_page') && is_checkout_pay_page();
+        $is_checkout   = function_exists('is_checkout') && is_checkout();
+        $is_thankyou   = function_exists('is_order_received_page') && is_order_received_page();
+
+        if ((!$is_checkout && !$is_pay_page) || $is_thankyou || !$this->is_available()) {
             return;
         }
 
-        $settings = $this->settings;
-        $qrs_table = isset($settings['qrs_table']) ? $settings['qrs_table'] : array();
-
-        $active_qr = null;
-        if (is_array($qrs_table) && !empty($qrs_table)) {
-            foreach ($qrs_table as $qr) {
-                if (isset($qr['is_active']) && $qr['is_active'] === 'yes') {
-                    $active_qr = $qr;
-                    break;
-                }
-            }
-            if (!$active_qr && !empty($qrs_table)) {
-                $active_qr = $qrs_table[0];
-            }
-        }
-
-        $charge = ($active_qr && isset($active_qr['payment_charge'])) ? floatval($active_qr['payment_charge']) : 0;
+        $settings  = $this->settings;
+        $active_qr = self::get_active_qr($settings);
+        $charge    = ($active_qr && isset($active_qr['payment_charge'])) ? floatval($active_qr['payment_charge']) : 0;
         $receipt_rule = isset($settings['receipt_rule']) ? $settings['receipt_rule'] : 'optional';
         $trxid_rule = isset($settings['trxid_rule']) ? $settings['trxid_rule'] : 'optional';
         $enable_manual_payment = isset($settings['enable_manual_payment']) ? $settings['enable_manual_payment'] : 'no';
         $paymentpage_img_url = OI_BANGLAQR_URL . 'includes/img/banglaqr-paymentpage.png';
 
-        // Formatted total respecting store decimal settings
-        $total_amount = WC()->cart->total;
+        // Formatted total respecting store decimal settings and order-pay context
+        $total_amount = 0;
+        if ($is_pay_page) {
+            global $wp;
+            $pay_order_id = isset($wp->query_vars['order-pay']) ? absint($wp->query_vars['order-pay']) : 0;
+            if ($pay_order_id > 0) {
+                $pay_order = wc_get_order($pay_order_id);
+                if ($pay_order) {
+                    $total_amount = $pay_order->get_total();
+                }
+            }
+        } elseif (function_exists('WC') && WC()->cart) {
+            $total_amount = WC()->cart->total;
+        }
+
         $formatted_total = wc_price($total_amount);
         $raw_numeric_total = number_format(floatval($total_amount), function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2, '.', '');
         
         $max_upload_size = wp_max_upload_size();
         $allowed_max_size = min(5 * 1024 * 1024, $max_upload_size);
         $allowed_max_size_mb = max(1, round($allowed_max_size / (1024 * 1024))) . 'MB';
+        $settings = get_option('woocommerce_oi_banglaqr_settings', array());
+        $modal_theme_color = isset($settings['theme_color']) && !empty($settings['theme_color']) ? $settings['theme_color'] : '#0A694B';
         ?>
-        <div id="banglaqr-modal" class="banglaqr-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="banglaqr-modal-title">
+        <div id="banglaqr-modal" class="banglaqr-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="banglaqr-modal-title" style="--banglaqr-primary: <?php echo esc_attr($modal_theme_color); ?>; --banglaqr-modal-primary: <?php echo esc_attr($modal_theme_color); ?>;">
             <div class="banglaqr-modal-container" role="document">
                 <!-- Non-destructive Success Overlay -->
                 <div id="banglaqr-success-overlay" class="banglaqr-success-overlay" style="display:none;">
@@ -1287,6 +1371,25 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                                 <div class="banglaqr-qr-box-text"><?php esc_html_e('Scan with Your App', 'banglaqr-payment-gateway-by-oi'); ?></div>
                             </div>
                             <div class="banglaqr-qr-zoom-hint-text"><?php esc_html_e('Tap to enlarge QR code', 'banglaqr-payment-gateway-by-oi'); ?></div>
+                            <div class="banglaqr-qr-actions-row">
+                                <a href="<?php echo esc_url($active_qr['qr_code_url']); ?>" download="banglaqr-pay.png" target="_blank" rel="noopener noreferrer" class="banglaqr-download-qr-btn" id="banglaqr-download-qr-btn" title="<?php esc_attr_e('QR কোড সেভ বা ডাউনলোড করুন', 'banglaqr-payment-gateway-by-oi'); ?>">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span><?php esc_html_e('QR কোড সেভ / ডাউনলোড করুন', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Friendly Instruction Box -->
+                        <div class="banglaqr-mobile-helper-box">
+                            <div class="banglaqr-mobile-helper-header">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                <strong><?php esc_html_e('মোবাইলে কেনাকাটা করছেন?', 'banglaqr-payment-gateway-by-oi'); ?></strong>
+                            </div>
+                            <p class="banglaqr-mobile-helper-desc">
+                                <?php esc_html_e('১. উপরের QR কোডটি সেভ/স্ক্রিনশট নিন।', 'banglaqr-payment-gateway-by-oi'); ?><br>
+                                <?php esc_html_e('২. আপনার বিকাশ, নগদ বা ব্যাংক অ্যাপ ওপেন করে কিউআর স্ক্যানারে যান এবং "গ্যালারি থেকে স্ক্যান" (Scan from Gallery) দিন।', 'banglaqr-payment-gateway-by-oi'); ?><br>
+                                <?php esc_html_e('৩. অথবা নিচের বাটনে ক্লিক করে সরাসরি নাম্বারে সেন্ড মানি করুন।', 'banglaqr-payment-gateway-by-oi'); ?>
+                            </p>
                         </div>
 
                         <!-- Payment Page Banner -->
@@ -1311,7 +1414,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             );
                             $has_manual = false;
                             foreach ($manual_accounts as $acc) {
-                                if (!empty(trim($acc['number']))) {
+                                if (!empty($acc['number']) && trim((string)$acc['number']) !== '') {
                                     $has_manual = true;
                                     break;
                                 }
@@ -1328,7 +1431,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             </div>
                             <div class="banglaqr-manual-accounts" id="banglaqr-mfs-accounts-container" style="display:none; margin-top: 10px;">
                                 <?php foreach ($manual_accounts as $acc): 
-                                    if (!empty(trim($acc['number']))):
+                                    if (!empty($acc['number']) && trim((string)$acc['number']) !== ''):
                                         $brandClass = 'banglaqr-brand-' . strtolower($acc['name']);
                                 ?>
                                     <div class="banglaqr-manual-account-item <?php echo esc_attr($brandClass); ?>">
@@ -1441,4 +1544,155 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         <?php
     }
 
+    /**
+     * Display order payment info on Order Received (Thank You) page.
+     *
+     * @param int $order_id Order ID.
+     */
+    public function thankyou_page_content($order_id)
+    {
+        $order = wc_get_order($order_id);
+        if (!$order || $order->get_payment_method() !== $this->id) {
+            return;
+        }
+
+        $trx_id      = $order->get_meta('_oi_banglaqr_transaction_id');
+        $selected_qr = $order->get_meta('_oi_banglaqr_selected_qr');
+        $receipt_id  = $order->get_meta('_oi_banglaqr_receipt_id');
+
+        if (empty($trx_id) && $order->get_transaction_id()) {
+            $trx_id = $order->get_transaction_id();
+        }
+        $brand_color = !empty($this->theme_color) ? $this->theme_color : '#0A694B';
+        ?>
+        <div class="banglaqr-thankyou-receipt-card">
+            <div class="banglaqr-thankyou-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="<?php echo esc_attr($brand_color); ?>" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <h4><?php esc_html_e('BanglaQR পেমেন্ট তথ্য সফলভাবে গৃহীত হয়েছে', 'banglaqr-payment-gateway-by-oi'); ?></h4>
+            </div>
+            <p class="banglaqr-thankyou-note">
+                <?php esc_html_e('ধন্যবাদ! আপনার পেমেন্ট তথ্য আমাদের অ্যাকাউন্টিং টিমে পৌঁছেছে। যাচাই শেষে দ্রুত অর্ডারটি প্রসেস করা হবে।', 'banglaqr-payment-gateway-by-oi'); ?>
+            </p>
+            <div class="banglaqr-thankyou-meta-grid">
+                <?php if (!empty($selected_qr)): ?>
+                    <div class="banglaqr-thankyou-meta-item">
+                        <span class="label"><?php esc_html_e('QR অ্যাকাউন্ট:', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                        <span class="val"><?php echo esc_html($selected_qr); ?></span>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($trx_id)): ?>
+                    <div class="banglaqr-thankyou-meta-item">
+                        <span class="label"><?php esc_html_e('Transaction ID (TrxID):', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                        <span class="val"><code><?php echo esc_html($trx_id); ?></code></span>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($receipt_id)): 
+                    $receipt_url = is_numeric($receipt_id) ? wp_get_attachment_url($receipt_id) : $receipt_id;
+                    if ($receipt_url):
+                ?>
+                    <div class="banglaqr-thankyou-meta-item">
+                        <span class="label"><?php esc_html_e('পেমেন্ট স্লিপ:', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                        <span class="val"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('রিসিট দেখুন', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></span>
+                    </div>
+                <?php endif; endif; ?>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Display payment verification details on Customer My Account -> View Order page.
+     *
+     * @param WC_Order $order Order object.
+     */
+    public function view_order_receipt_content($order)
+    {
+        // Prevent duplicate rendering on Thank You / Order Received page
+        if (function_exists('is_order_received_page') && is_order_received_page()) {
+            return;
+        }
+
+        if (!$order || $order->get_payment_method() !== $this->id) {
+            return;
+        }
+        $this->thankyou_page_content($order->get_id());
+    }
+
+    /**
+     * Add payment details to WooCommerce order emails.
+     *
+     * @param WC_Order $order Order object.
+     * @param bool $sent_to_admin Whether sent to admin.
+     * @param bool $plain_text Plain text email.
+     * @param WC_Email $email Email object.
+     */
+    public function email_instructions($order, $sent_to_admin, $plain_text = false, $email = null)
+    {
+        if (!$order || $order->get_payment_method() !== $this->id) {
+            return;
+        }
+
+        $trx_id      = $order->get_meta('_oi_banglaqr_transaction_id');
+        $selected_qr = $order->get_meta('_oi_banglaqr_selected_qr');
+        $receipt_id  = $order->get_meta('_oi_banglaqr_receipt_id');
+        $receipt_url = '';
+
+        if (!empty($receipt_id)) {
+            $receipt_url = is_numeric($receipt_id) ? wp_get_attachment_url($receipt_id) : $receipt_id;
+        }
+
+        if (empty($trx_id) && $order->get_transaction_id()) {
+            $trx_id = $order->get_transaction_id();
+        }
+
+        if ($plain_text) {
+            echo "\n====================================================\n";
+            echo esc_html__("BanglaQR পেমেন্ট বিবরণ:\n", 'banglaqr-payment-gateway-by-oi');
+            if (!empty($selected_qr)) {
+                echo esc_html__("অ্যাকাউন্ট: ", 'banglaqr-payment-gateway-by-oi') . $selected_qr . "\n";
+            }
+            if (!empty($trx_id)) {
+                echo esc_html__("TrxID: ", 'banglaqr-payment-gateway-by-oi') . $trx_id . "\n";
+            }
+            if (!empty($receipt_url)) {
+                echo esc_html__("পেমেন্ট স্লিপ: ", 'banglaqr-payment-gateway-by-oi') . $receipt_url . "\n";
+            }
+            echo esc_html__("পেমেন্ট যাচাইয়ের পর অর্ডারটি কনফার্ম করা হবে।\n", 'banglaqr-payment-gateway-by-oi');
+            echo "====================================================\n\n";
+        } else {
+            $brand_color = !empty($this->theme_color) ? $this->theme_color : '#0A694B';
+            ?>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin:20px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                <h3 style="margin-top:0; color:<?php echo esc_attr($brand_color); ?>; font-size:16px; display:flex; align-items:center;">
+                    <?php esc_html_e('BanglaQR পেমেন্ট বিবরণ', 'banglaqr-payment-gateway-by-oi'); ?>
+                </h3>
+                <p style="margin:4px 0 12px 0; color:#334155; font-size:14px;">
+                    <?php esc_html_e('আপনার পেমেন্ট তথ্য জমা নেওয়া হয়েছে। আমাদের টিম যাচাই শেষে অর্ডারটি সম্পন্ন করবে।', 'banglaqr-payment-gateway-by-oi'); ?>
+                </p>
+                <table style="width:100%; border-collapse:collapse; font-size:13px; color:#475569;">
+                    <?php if (!empty($selected_qr)): ?>
+                        <tr>
+                            <td style="padding:4px 0; font-weight:600; width:140px;"><?php esc_html_e('QR অ্যাকাউন্ট:', 'banglaqr-payment-gateway-by-oi'); ?></td>
+                            <td style="padding:4px 0; color:#0f172a;"><?php echo esc_html($selected_qr); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                    <?php if (!empty($trx_id)): ?>
+                        <tr>
+                            <td style="padding:4px 0; font-weight:600;"><?php esc_html_e('Transaction ID (TrxID):', 'banglaqr-payment-gateway-by-oi'); ?></td>
+                            <td style="padding:4px 0; color:#0f172a;"><strong><?php echo esc_html($trx_id); ?></strong></td>
+                        </tr>
+                    <?php endif; ?>
+                    <?php if (!empty($receipt_url)): ?>
+                        <tr>
+                            <td style="padding:4px 0; font-weight:600;"><?php esc_html_e('পেমেন্ট স্লিপ:', 'banglaqr-payment-gateway-by-oi'); ?></td>
+                            <td style="padding:4px 0;"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" style="color:<?php echo esc_attr($brand_color); ?>; font-weight:700; text-decoration:underline;"><?php esc_html_e('রিসিট দেখুন', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></td>
+                        </tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+            <?php
+        }
+    }
+
 }
+

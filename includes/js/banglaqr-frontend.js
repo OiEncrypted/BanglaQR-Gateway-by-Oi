@@ -26,6 +26,33 @@ jQuery(document).ready(function ($) {
         return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
+    // Dynamic color helpers for conversion color system
+    function hexToRgba(hex, alpha) {
+        if (!hex) return 'rgba(10, 105, 75, ' + alpha + ')';
+        var clean = hex.replace('#', '');
+        if (clean.length === 3) {
+            clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+        }
+        var r = parseInt(clean.substring(0, 2), 16) || 10;
+        var g = parseInt(clean.substring(2, 4), 16) || 105;
+        var b = parseInt(clean.substring(4, 6), 16) || 75;
+        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+    }
+
+    function adjustColorBrightness(hex, percent) {
+        if (!hex) return '#07523a';
+        var clean = hex.replace('#', '');
+        if (clean.length === 3) {
+            clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+        }
+        var num = parseInt(clean, 16);
+        var amt = Math.round(2.55 * percent);
+        var r = (num >> 16) + amt;
+        var g = ((num >> 8) & 0x00ff) + amt;
+        var b = (num & 0x0000ff) + amt;
+        return '#' + (0x1000000 + (r < 255 ? (r < 0 ? 0 : r) : 255) * 0x10000 + (g < 255 ? (g < 0 ? 0 : g) : 255) * 0x100 + (b < 255 ? (b < 0 ? 0 : b) : 255)).toString(16).slice(1);
+    }
+
     // Get dynamic checkout total from DOM, fallback to localized total
     function getCurrentOrderTotal() {
         var total = '';
@@ -123,10 +150,11 @@ jQuery(document).ready(function ($) {
             var btn = $(this);
             var amt = btn.attr('data-amount') || '';
             if (!amt) {
-                amt = getCurrentOrderTotal().replace(/[^0-9\.]/g, '');
+                amt = getCurrentOrderTotal();
             }
+            var cleanAmt = String(amt).replace(/[^0-9\.]/g, '');
 
-            copyTextToClipboard(amt, function() {
+            copyTextToClipboard(cleanAmt, function() {
                 btn.html(copiedAmountHtml).addClass('copied');
                 setTimeout(function() {
                     btn.html(defaultCopyAmountHtml).removeClass('copied');
@@ -134,15 +162,37 @@ jQuery(document).ready(function ($) {
             });
         });
 
-        // Countdown Timer logic is now handled by startTimer() when modal opens
+        // Download / Save QR Code Handler for Mobile & Desktop
+        $(document).off('click', '#banglaqr-download-qr-btn').on('click', '#banglaqr-download-qr-btn', function(e) {
+            var qrUrl = $(this).attr('href');
+            if (!qrUrl) return;
 
-        // TrxID Smart Validation (Strip SMS prefixes like "TrxID:", alphanumeric only, uppercase)
-        $('#banglaqr-trx-input').on('input', function() {
+            try {
+                fetch(qrUrl)
+                    .then(function(res) { return res.blob(); })
+                    .then(function(blob) {
+                        var blobUrl = window.URL.createObjectURL(blob);
+                        var tempA = document.createElement('a');
+                        tempA.style.display = 'none';
+                        tempA.href = blobUrl;
+                        tempA.download = 'banglaqr-pay.png';
+                        document.body.appendChild(tempA);
+                        tempA.click();
+                        document.body.removeChild(tempA);
+                        setTimeout(function() { window.URL.revokeObjectURL(blobUrl); }, 1000);
+                    })
+                    .catch(function() {
+                        // If cross-origin fetch is restricted, native browser link download/open handles it
+                    });
+            } catch (err) {}
+        });
+
+        // TrxID Smart Validation (Clean prefixes on blur/change to preserve smooth mobile typing)
+        $('#banglaqr-trx-input').on('change blur', function() {
             var val = $(this).val();
-            var cleaned = val.replace(/^(trxid|txnid|transaction\s*id|trans\s*id|ref|reference)[:\s\-\.]+/i, '');
-            var sanitized = cleaned.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            if (val !== sanitized) {
-                $(this).val(sanitized);
+            if (val) {
+                var cleaned = val.replace(/^(trxid|txnid|transaction\s*id|trans\s*id|ref|reference)[:\s\-\.]+/i, '').trim();
+                $(this).val(cleaned.toUpperCase());
             }
         });
 
@@ -453,18 +503,13 @@ jQuery(document).ready(function ($) {
                                 newFile.name = baseName + '.jpg';
                             }
 
-                            var base64Data = null;
-                            try {
-                                base64Data = canvas.toDataURL('image/jpeg', quality);
-                            } catch (e) {}
-
                             // Release memory
                             img.onload = null;
                             img.onerror = null;
                             img.src = '';
                             canvas.width = 0;
                             canvas.height = 0;
-                            callback(newFile, base64Data);
+                            callback(newFile, null);
                         }, 'image/jpeg', quality);
                     }
 
@@ -656,13 +701,21 @@ jQuery(document).ready(function ($) {
     function openModal() {
         $lastActiveElement = document.activeElement;
         
-        var themeColor = oi_banglaqr_params.theme_color || '#137833';
+        var themeColor = oi_banglaqr_params.theme_color || '#0A694B';
         var modal = document.getElementById('banglaqr-modal');
         if (modal) {
+            var hoverColor = adjustColorBrightness(themeColor, -15);
+            var lightTint = hexToRgba(themeColor, 0.08);
+            var borderTint = hexToRgba(themeColor, 0.25);
+
+            modal.style.setProperty('--banglaqr-primary', themeColor);
             modal.style.setProperty('--banglaqr-modal-primary', themeColor);
-            modal.style.setProperty('--banglaqr-modal-primary-hover', themeColor + 'dd');
-            modal.style.setProperty('--banglaqr-modal-primary-light', themeColor + '15');
-            modal.style.setProperty('--banglaqr-modal-primary-border', themeColor + '30');
+            modal.style.setProperty('--banglaqr-primary-hover', hoverColor);
+            modal.style.setProperty('--banglaqr-modal-primary-hover', hoverColor);
+            modal.style.setProperty('--banglaqr-primary-light', lightTint);
+            modal.style.setProperty('--banglaqr-modal-primary-light', lightTint);
+            modal.style.setProperty('--banglaqr-primary-border', borderTint);
+            modal.style.setProperty('--banglaqr-modal-primary-border', borderTint);
         }
 
         setupModalEvents();
@@ -698,6 +751,14 @@ jQuery(document).ready(function ($) {
         }
     }
 
+    function getCheckoutForm() {
+        var $form = $('form.checkout');
+        if (!$form.length) {
+            $form = $('form#order_review');
+        }
+        return $form;
+    }
+
     function playSuccessAnimationAndSubmit() {
         // Non-destructive overlay animation - preserves all inner form elements
         $('#banglaqr-success-overlay').fadeIn(150);
@@ -705,7 +766,10 @@ jQuery(document).ready(function ($) {
         setTimeout(function() {
             uploadInProgress = false;
             closeModal();
-            $('form.checkout').submit();
+            var $form = getCheckoutForm();
+            if ($form.length) {
+                $form.submit();
+            }
         }, 1000); // 1000ms snappy response
     }
 
@@ -780,9 +844,7 @@ jQuery(document).ready(function ($) {
         if (selectedFile) {
             formData.append('oi_banglaqr_file', selectedFile, safeName);
             formData.append('image_name', safeName);
-        }
-
-        if (selectedBase64) {
+        } else if (selectedBase64) {
             formData.append('image_base64', selectedBase64);
         }
 
@@ -816,6 +878,9 @@ jQuery(document).ready(function ($) {
 
                     // Store details in checkout fields
                     $('#oi_banglaqr_receipt_id').val(attachmentId);
+                    if (response.data && response.data.token) {
+                        $('#oi_banglaqr_receipt_token').val(response.data.token);
+                    }
                     $('#oi_banglaqr_transaction_id').val(trxId || '');
                     $('#oi_banglaqr_selected_qr').val(activeQrName);
                     $('#oi_banglaqr_confirmed').val('1');
@@ -833,7 +898,7 @@ jQuery(document).ready(function ($) {
                     '</div>' +
                     '<div class="banglaqr-preview-meta">' +
                         '<div class="banglaqr-preview-meta-item"><span><strong>' + escHtml(oi_banglaqr_params.i18n_account) + '</strong> ' + escHtml(activeQrName) + '</span></div>' +
-                        '<div class="banglaqr-preview-meta-item"><span><strong>' + escHtml(oi_banglaqr_params.i18n_receipt) + '</strong> <a href="' + escAttr(response.data.url) + '" target="_blank" rel="noopener noreferrer" style="color: var(--banglaqr-modal-primary, #137833); font-weight:600; text-decoration:underline;">' + escHtml(oi_banglaqr_params.i18n_view_receipt) + '</a></span></div>';
+                        '<div class="banglaqr-preview-meta-item"><span><strong>' + escHtml(oi_banglaqr_params.i18n_receipt) + '</strong> <a href="' + escAttr(response.data.url) + '" target="_blank" rel="noopener noreferrer" style="color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B)); font-weight:600; text-decoration:underline;">' + escHtml(oi_banglaqr_params.i18n_view_receipt) + '</a></span></div>';
                     if (trxId) {
                         previewMarkup += '<div class="banglaqr-preview-meta-item"><span><strong>' + escHtml(oi_banglaqr_params.i18n_transaction_id) + '</strong> <span class="banglaqr-preview-tag">' + escHtml(trxId) + '</span></span></div>';
                     }
@@ -874,6 +939,11 @@ jQuery(document).ready(function ($) {
 
     // Validate checkout required fields before triggering popup
     function validateCheckoutForm() {
+        var $form = getCheckoutForm();
+        if (!$form.length || !$form.hasClass('checkout')) {
+            return true;
+        }
+
         var errors = [];
 
         $('.woocommerce-NoticeGroup-checkout, .woocommerce-error').remove();
@@ -937,7 +1007,6 @@ jQuery(document).ready(function ($) {
             errorHtml += '  </ul>';
             errorHtml += '</div>';
 
-            var $form = $('form.checkout');
             $form.prepend(errorHtml);
 
             $('html, body').animate({
@@ -961,12 +1030,12 @@ jQuery(document).ready(function ($) {
     });
 
     // When WooCommerce finishes updating the checkout fragments, keep modal amount in sync
-    $(document.body).on('updated_checkout', function () {
+    $(document.body).on('updated_checkout payment_method_selected', function () {
         updateModalAmounts();
     });
 
     // Intercept checkout submit button
-    $(document).on('click', 'form.checkout #place_order', function (e) {
+    $(document).on('click', 'form.checkout #place_order, form#order_review #place_order, #place_order, button[name="woocommerce_checkout_place_order"]', function (e) {
         var activePaymentMethod = $('input[name="payment_method"]:checked').val();
 
         if (activePaymentMethod === oi_banglaqr_params.gateway_id) {
@@ -993,8 +1062,8 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // In case WooCommerce triggers submission via event
-    $('form.checkout').on('checkout_place_order_' + oi_banglaqr_params.gateway_id, function () {
+    // In case WooCommerce triggers submission via event (use delegated event so AJAX fragment refresh never breaks it)
+    $(document).on('checkout_place_order_' + oi_banglaqr_params.gateway_id, 'form.checkout, form#order_review', function () {
         var isConfirmed = $('#oi_banglaqr_confirmed').val() === '1';
         var receiptId = $('#oi_banglaqr_receipt_id').val();
         var trxId = $('#oi_banglaqr_transaction_id').val();

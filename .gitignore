@@ -78,4 +78,8 @@ wp-content/upgrade/
 /wp-admin/
 /wp-includes/
 /wp-*.php
-!/banglaqr-payment-gateway.php
+!/banglaqr-gateway.php
+
+# Local Samples & Backups
+*-sample/
+*-backup/

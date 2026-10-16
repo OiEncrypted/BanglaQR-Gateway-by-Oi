@@ -8,9 +8,11 @@
  * Author URI: https://oitech.com.bd/
  * License: GPLv3 or later
  * Domain Path: /languages
- * Tested up to: 7.1
- * Requires at least: 5.6
+ * Tested up to: 6.7
+ * Requires at least: 5.8
  * Requires PHP: 7.4
+ * WC requires at least: 5.0
+ * WC tested up to: 9.4
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: banglaqr-payment-gateway-by-oi
  */
@@ -24,11 +26,12 @@ define('OI_BANGLAQR_URL', plugin_dir_url(__FILE__));
 define('OI_BANGLAQR_BASENAME', plugin_basename(__FILE__));
 
 /**
- * Declare WooCommerce HPOS Compatibility
+ * Declare WooCommerce HPOS and Blocks Compatibility
  */
 add_action('before_woocommerce_init', function () {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, false);
     }
 });
 
@@ -167,39 +170,14 @@ function oi_banglaqr_add_payment_charge_fee()
         return;
     }
 
-    $qrs_table = isset($settings['qrs_table']) ? $settings['qrs_table'] : array();
-
-    if (!is_array($qrs_table) || empty($qrs_table)) {
-        $qrs_table = array(
-            array(
-                'qr_name' => 'BanglaQR (Primary)',
-                'qr_code_url' => OI_BANGLAQR_URL . 'includes/img/testqr.png',
-                'payment_charge' => '1',
-                'is_active' => 'yes',
-            )
-        );
-    }
-
-    $active_qr = null;
-    if (is_array($qrs_table) && !empty($qrs_table)) {
-        foreach ($qrs_table as $qr) {
-            if (isset($qr['is_active']) && $qr['is_active'] === 'yes') {
-                $active_qr = $qr;
-                break;
-            }
-        }
-        if (!$active_qr && !empty($qrs_table)) {
-            $active_qr = $qrs_table[0];
-        }
-    }
-
+    $active_qr = Oi_BanglaQR_Gateway::get_active_qr($settings);
     $charge_percent = ($active_qr && isset($active_qr['payment_charge'])) ? floatval($active_qr['payment_charge']) : 0;
     if ($charge_percent <= 0) {
         return;
     }
 
-    // 3. Base amount: net cart total after discounts + shipping + taxes
-    $base_amount = WC()->cart->get_cart_contents_total() + WC()->cart->get_shipping_total() + WC()->cart->get_taxes_total();
+    // 3. Base amount: net cart total after discounts + shipping
+    $base_amount = WC()->cart->get_cart_contents_total() + WC()->cart->get_shipping_total();
 
     // Calculate fee respecting store decimal precision
     $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
@@ -239,18 +217,18 @@ register_deactivation_hook(__FILE__, 'oi_banglaqr_deactivate_plugin');
 function oi_banglaqr_cleanup_pending_receipts()
 {
     $args = array(
-        'post_type' => 'attachment',
-        'post_status' => 'any',
+        'post_type'      => 'attachment',
+        'post_status'    => 'any',
         'posts_per_page' => 100,
-        'date_query' => array(
+        'date_query'     => array(
             array(
                 'column' => 'post_date_gmt',
                 'before' => '24 hours ago',
             ),
         ),
-        'meta_query' => array(
+        'meta_query'     => array(
             array(
-                'key' => '_oi_banglaqr_pending_upload',
+                'key'   => '_oi_banglaqr_pending_upload',
                 'value' => '1',
             ),
         ),
@@ -259,8 +237,9 @@ function oi_banglaqr_cleanup_pending_receipts()
     $query = new WP_Query($args);
     if ($query->have_posts()) {
         foreach ($query->posts as $attachment) {
-            // Safety check: Never delete an attachment that is linked to an order
-            if (!empty($attachment->post_parent) && intval($attachment->post_parent) > 0) {
+            // Safety check: Never delete an attachment that is linked to an order (Supports classic & HPOS)
+            $order_id_meta = get_post_meta($attachment->ID, '_oi_banglaqr_order_id', true);
+            if ((!empty($attachment->post_parent) && intval($attachment->post_parent) > 0) || !empty($order_id_meta)) {
                 delete_post_meta($attachment->ID, '_oi_banglaqr_pending_upload');
                 continue;
             }

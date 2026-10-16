@@ -4,12 +4,13 @@
  */
 
 :root {
-    --banglaqr-primary: #137833;
-    --banglaqr-primary-hover: #0f6229;
-    --banglaqr-primary-light: #f0fdf4;
-    --banglaqr-primary-border: #bbf7d0;
+    --banglaqr-primary: #0A694B;
+    --banglaqr-primary-hover: #07523a;
+    --banglaqr-primary-light: #f0fdf9;
+    --banglaqr-primary-border: #a7f3d0;
 
-    --banglaqr-accent: #E20613;
+    --banglaqr-accent: #F02F42;
+    --banglaqr-accent-hover: #d61a2d;
     --banglaqr-accent-light: #fef2f2;
     --banglaqr-accent-border: #fecaca;
 
@@ -63,7 +64,7 @@
     background-color: var(--banglaqr-card-bg);
     border-radius: 20px;
     width: 100%;
-    max-width: 460px;
+    max-width: min(460px, calc(100vw - 24px));
     box-shadow: var(--banglaqr-shadow-modal);
     overflow: hidden;
     position: relative;
@@ -71,7 +72,8 @@
     transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
+    max-height: min(92vh, 92dvh);
+    box-sizing: border-box;
 }
 
 .banglaqr-modal-overlay.is-active .banglaqr-modal-container {
@@ -80,28 +82,39 @@
 
 /* Modal Header with Smooth Gradient */
 .banglaqr-modal-header {
-    padding: 18px 22px;
+    padding: clamp(14px, 3.5vw, 18px) clamp(16px, 4vw, 22px);
     background: linear-gradient(135deg, var(--banglaqr-modal-primary, var(--banglaqr-primary)) 0%, var(--banglaqr-modal-primary-hover, var(--banglaqr-primary-hover)) 100%);
     color: #ffffff;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     border-bottom: 1px solid rgba(0,0,0,0.05);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.banglaqr-modal-header > div:first-child {
+    min-width: 0;
+    flex: 1;
 }
 
 .banglaqr-modal-header h3 {
     margin: 0 !important;
-    font-size: 18px !important;
+    font-size: clamp(16px, 3.8vw, 18px) !important;
     font-weight: 700 !important;
     color: #ffffff !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
+    word-break: break-word;
 }
 
 .banglaqr-modal-subtitle {
     margin: 4px 0 0 0 !important;
-    font-size: 13px !important;
+    font-size: clamp(11.5px, 2.8vw, 13px) !important;
     color: rgba(255, 255, 255, 0.92) !important;
     font-weight: 500;
+    line-height: 1.35 !important;
+    word-break: break-word;
 }
 
 .banglaqr-modal-close {
@@ -119,6 +132,7 @@
     height: 36px;
     min-width: 36px;
     min-height: 36px;
+    flex-shrink: 0;
 }
 
 .banglaqr-modal-close:hover,
@@ -136,13 +150,19 @@
 }
 
 .banglaqr-modal-body {
-    padding: 24px;
+    padding: clamp(14px, 3.5vw, 24px);
     overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: clamp(10px, 2.5vw, 16px);
     background: #ffffff;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 /* Payable Amount Box */
@@ -196,9 +216,9 @@
 }
 
 .banglaqr-copy-amount-btn:hover {
-    background: var(--banglaqr-modal-primary-light, #f0fdf4);
-    color: var(--banglaqr-modal-primary, #137833);
-    border-color: var(--banglaqr-modal-primary, #137833);
+    background: var(--banglaqr-modal-primary-light, var(--banglaqr-primary-light, #f0fdf9));
+    color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B));
+    border-color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B));
 }
 
 .banglaqr-copy-amount-btn.copied {
@@ -222,8 +242,10 @@
 }
 
 .banglaqr-qr-box {
-    width: 175px;
-    height: 185px;
+    width: min(175px, 65vw) !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: min(180px, 65vw) !important;
     border-radius: 16px;
     background-color: #ffffff;
     border: 1px solid var(--banglaqr-border);
@@ -237,6 +259,7 @@
     position: relative;
     transition: all 0.25s ease;
     cursor: pointer;
+    box-sizing: border-box !important;
 }
 
 .banglaqr-qr-box.is-zoomable:hover,
@@ -249,8 +272,10 @@
 }
 
 .banglaqr-qr-box img {
-    width: 145px !important;
-    height: 145px !important;
+    width: min(145px, 52vw) !important;
+    max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
     object-fit: contain !important;
     margin-bottom: 4px !important;
 }
@@ -1026,96 +1051,14 @@
     50% { opacity: 0.5; }
 }
 
-/* --- Success Animation --- */
-.banglaqr-success-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    text-align: center;
-}
-
-.banglaqr-success-icon-wrap {
-    position: relative;
-    margin-bottom: 24px;
-}
-
-.banglaqr-success-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: var(--banglaqr-modal-primary, var(--banglaqr-primary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    z-index: 2;
-    animation: banglaqr-pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 10px 25px -5px var(--banglaqr-modal-primary-border, rgba(19,120,51,0.4));
-}
-
-.banglaqr-success-icon::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: 50%;
-    background: var(--banglaqr-modal-primary, var(--banglaqr-primary));
-    z-index: -1;
-    animation: banglaqr-pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.banglaqr-success-icon svg {
-    width: 40px;
-    height: 40px;
-    color: #ffffff;
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
-    animation: banglaqr-draw-check 0.5s ease-out 0.3s forwards;
-}
-
-.banglaqr-success-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 8px;
-    animation: banglaqr-fade-up 0.5s ease-out 0.2s both;
-}
-
-.banglaqr-success-subtitle {
-    font-size: 15px;
-    color: #64748b;
-    animation: banglaqr-fade-up 0.5s ease-out 0.3s both;
-}
-
-@keyframes banglaqr-pulse-ring {
-    0% { transform: scale(1); opacity: 0.5; }
-    100% { transform: scale(1.7); opacity: 0; }
-}
-
-@keyframes banglaqr-pop-in {
-    0% { transform: scale(0); opacity: 0; }
-    80% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes banglaqr-draw-check {
-    to { stroke-dashoffset: 0; }
-}
-
-@keyframes banglaqr-fade-up {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 /* --- Selected Payment Preview Card on Checkout --- */
 .banglaqr-selected-qr-preview {
     display: none;
     margin-top: 14px;
     padding: 14px 16px;
     background: #ffffff;
-    border: 1px solid var(--banglaqr-primary-border, #bbf7d0);
-    border-left: 4px solid var(--banglaqr-modal-primary, var(--banglaqr-primary, #137833));
+    border: 1px solid var(--banglaqr-primary-border, #a7f3d0);
+    border-left: 4px solid var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B));
     border-radius: 12px;
     box-shadow: var(--banglaqr-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
     font-size: 13px;
@@ -1135,7 +1078,7 @@
 
 .banglaqr-preview-title {
     font-weight: 700;
-    color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #137833));
+    color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B));
     font-size: 13px;
     display: inline-flex;
     align-items: center;
@@ -1143,13 +1086,13 @@
 }
 
 .banglaqr-preview-badge {
-    background-color: var(--banglaqr-modal-primary-light, #f0fdf4);
-    color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #137833));
+    background-color: var(--banglaqr-modal-primary-light, #f0fdf9);
+    color: var(--banglaqr-modal-primary, var(--banglaqr-primary, #0A694B));
     font-size: 11px;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 10px;
-    border: 1px solid var(--banglaqr-primary-border, #bbf7d0);
+    border: 1px solid var(--banglaqr-primary-border, #a7f3d0);
 }
 
 .banglaqr-preview-change-btn {
@@ -1202,7 +1145,7 @@
 /* --- Mobile Responsive Media Queries --- */
 @media (max-width: 480px) {
     .banglaqr-modal-overlay {
-        padding: 8px;
+        padding: 8px 6px;
         align-items: flex-end;
     }
 
@@ -1212,21 +1155,23 @@
         max-height: 94dvh;
         max-height: 94vh;
         border-radius: 18px 18px 10px 10px;
+        margin: 0;
     }
 
     .banglaqr-modal-header {
-        padding: 14px 16px;
+        padding: 12px 14px;
     }
 
     .banglaqr-modal-close {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        min-height: 38px;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+        padding: 6px;
     }
 
     .banglaqr-modal-body {
-        padding: 16px;
+        padding: 14px 12px;
         gap: 12px;
     }
 
@@ -1235,22 +1180,22 @@
     }
 
     .banglaqr-payable-value {
-        font-size: 20px;
+        font-size: 19px;
     }
 
     .banglaqr-qr-box {
-        width: 155px;
-        height: 165px;
+        width: min(150px, 60vw) !important;
+        min-height: min(155px, 60vw) !important;
         padding: 8px;
     }
 
     .banglaqr-qr-box img {
-        width: 125px !important;
-        height: 125px !important;
+        width: min(120px, 48vw) !important;
+        height: auto !important;
     }
 
     .banglaqr-dropzone {
-        padding: 16px 12px;
+        padding: 14px 10px;
     }
 
     .banglaqr-manual-account-item {
@@ -1266,37 +1211,212 @@
 
     .banglaqr-manual-account-number-wrap {
         width: 100%;
+        min-width: 0;
     }
 
     .banglaqr-manual-account-number {
-        font-size: 14px;
+        font-size: 13.5px;
         text-align: left;
+        word-break: break-all;
     }
 
     .banglaqr-manual-copy-btn {
-        padding: 5px 10px;
+        padding: 5px 8px;
         font-size: 11px;
+        flex-shrink: 0;
     }
 
     .banglaqr-modal-footer {
-        padding: 12px 14px;
+        display: flex;
+        flex-direction: column-reverse;
+        padding: 10px 12px;
         gap: 8px;
     }
 
     .banglaqr-btn {
         height: 42px;
         font-size: 13px !important;
+        width: 100%;
     }
 
     .banglaqr-zoom-card {
-        padding: 16px;
+        padding: 14px;
         max-width: 95vw;
     }
 }
 
-@media (max-width: 360px) {
-    .banglaqr-modal-footer {
-        grid-template-columns: 1fr;
+@media (max-width: 340px) {
+    .banglaqr-modal-overlay {
+        padding: 4px;
+    }
+
+    .banglaqr-modal-header {
+        padding: 10px 12px;
+    }
+
+    .banglaqr-modal-header h3 {
+        font-size: 15px !important;
+    }
+
+    .banglaqr-countdown-timer {
+        padding: 3px 5px;
+        font-size: 11px;
+    }
+
+    .banglaqr-modal-body {
+        padding: 10px 8px;
+        gap: 10px;
+    }
+
+    .banglaqr-download-qr-btn {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    .banglaqr-copy-amount-btn {
+        padding: 4px 6px;
+        font-size: 11px;
     }
 }
+
+/* ==========================================================================
+   Mobile Helper & Download QR Actions
+   ========================================================================== */
+.banglaqr-qr-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.banglaqr-download-qr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--banglaqr-modal-primary, var(--banglaqr-primary));
+    background-color: var(--banglaqr-primary-light);
+    border: 1px solid var(--banglaqr-primary-border);
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.banglaqr-download-qr-btn:hover,
+.banglaqr-download-qr-btn:focus {
+    background-color: var(--banglaqr-modal-primary, var(--banglaqr-primary));
+    color: #ffffff;
+    border-color: var(--banglaqr-modal-primary, var(--banglaqr-primary));
+    transform: translateY(-1px);
+}
+
+.banglaqr-mobile-helper-box {
+    background-color: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: left;
+}
+
+.banglaqr-mobile-helper-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #0f172a;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.banglaqr-mobile-helper-desc {
+    margin: 0 !important;
+    font-size: 11.5px !important;
+    line-height: 1.55 !important;
+    color: #475569 !important;
+}
+
+/* ==========================================================================
+   Thank You Page & Customer View Order Receipt Card
+   ========================================================================== */
+.banglaqr-thankyou-receipt-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: clamp(14px, 3.5vw, 20px);
+    margin: 20px 0 25px 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.banglaqr-thankyou-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.banglaqr-thankyou-header h4 {
+    margin: 0 !important;
+    font-size: 16px !important;
+    color: var(--banglaqr-primary, #0A694B) !important;
+    font-weight: 700 !important;
+}
+
+.banglaqr-thankyou-note {
+    font-size: 13.5px !important;
+    color: #334155 !important;
+    margin: 0 0 14px 0 !important;
+    line-height: 1.5 !important;
+}
+
+.banglaqr-thankyou-meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(8px, 2vw, 16px);
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    padding: 12px 14px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.banglaqr-thankyou-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.banglaqr-thankyou-meta-item .label {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.banglaqr-thankyou-meta-item .val {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.banglaqr-thankyou-meta-item .val code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #0f172a;
+}
+
+.banglaqr-thankyou-meta-item .val a {
+    color: var(--banglaqr-primary, #0A694B);
+    font-weight: 700;
+    text-decoration: underline;
+}
+
 
