@@ -77,14 +77,21 @@ jQuery(document).ready(function ($) {
     }
 
     function copyTextToClipboard(text, callback) {
+        var triggerDone = function() {
+            if (window.navigator && window.navigator.vibrate) {
+                try { window.navigator.vibrate(35); } catch (e) {}
+            }
+            if (callback) callback();
+        };
+
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(function () {
-                if (callback) callback();
+                triggerDone();
             }).catch(function () {
-                fallbackCopyText(text, callback);
+                fallbackCopyText(text, triggerDone);
             });
         } else {
-            fallbackCopyText(text, callback);
+            fallbackCopyText(text, triggerDone);
         }
     }
 
@@ -164,8 +171,25 @@ jQuery(document).ready(function ($) {
 
         // Download / Save QR Code Handler for Mobile & Desktop
         $(document).off('click', '#banglaqr-download-qr-btn').on('click', '#banglaqr-download-qr-btn', function(e) {
-            var qrUrl = $(this).attr('href');
+            var btn = $(this);
+            var qrUrl = btn.attr('href');
             if (!qrUrl) return;
+
+            if (window.navigator && window.navigator.vibrate) {
+                try { window.navigator.vibrate(40); } catch (vErr) {}
+            }
+
+            var origHtml = btn.data('orig-html') || btn.html();
+            btn.data('orig-html', origHtml);
+            var savedText = (typeof oi_banglaqr_params !== 'undefined' && oi_banglaqr_params.i18n_qr_saved) ? oi_banglaqr_params.i18n_qr_saved : 'QR Saved! Scan from Gallery';
+            btn.addClass('saved').html('<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>' + escHtml(savedText) + '</span>');
+            
+            var existingTimer = btn.data('save-timer');
+            if (existingTimer) clearTimeout(existingTimer);
+            btn.data('save-timer', setTimeout(function() {
+                btn.removeClass('saved').html(origHtml);
+                btn.removeData('save-timer');
+            }, 3000));
 
             try {
                 fetch(qrUrl)
@@ -187,12 +211,67 @@ jQuery(document).ready(function ($) {
             } catch (err) {}
         });
 
+        // Ensure soft keyboard does not block TrxID input on mobile devices
+        $('#banglaqr-trx-input').on('focus', function() {
+            var inputEl = this;
+            setTimeout(function() {
+                if (inputEl && typeof inputEl.scrollIntoView === 'function') {
+                    inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 250);
+        });
+
         // TrxID Smart Validation (Clean prefixes on blur/change to preserve smooth mobile typing)
         $('#banglaqr-trx-input').on('change blur', function() {
             var val = $(this).val();
             if (val) {
                 var cleaned = val.replace(/^(trxid|txnid|transaction\s*id|trans\s*id|ref|reference)[:\s\-\.]+/i, '').trim();
                 $(this).val(cleaned.toUpperCase());
+            }
+        });
+
+        // Desktop smooth mouse wheel scrolling support across whole modal
+        $('#banglaqr-modal').off('wheel.banglaqr').on('wheel.banglaqr', function(e) {
+            var modalBody = document.querySelector('.banglaqr-modal-body');
+            if (!modalBody) return;
+
+            // If modal body is not overflowed, nothing to scroll
+            if (modalBody.scrollHeight <= modalBody.clientHeight) return;
+
+            var origEvent = e.originalEvent || e;
+            var target = e.target;
+
+            // If mouse is over header, footer, backdrop or container padding
+            if (!modalBody.contains(target)) {
+                modalBody.scrollTop += origEvent.deltaY;
+                e.preventDefault();
+            }
+        });
+
+        // Keyboard scrolling support (Arrow Up/Down, Page Up/Down) when modal is active
+        $(document).off('keydown.banglaqrNav').on('keydown.banglaqrNav', function(e) {
+            if (!$('#banglaqr-modal').hasClass('is-active')) return;
+
+            var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            if (activeTag === 'input' || activeTag === 'textarea') {
+                return; // Allow normal typing
+            }
+
+            var modalBody = document.querySelector('.banglaqr-modal-body');
+            if (!modalBody || modalBody.scrollHeight <= modalBody.clientHeight) return;
+
+            if (e.key === 'ArrowDown') {
+                modalBody.scrollTop += 50;
+                e.preventDefault();
+            } else if (e.key === 'ArrowUp') {
+                modalBody.scrollTop -= 50;
+                e.preventDefault();
+            } else if (e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
+                modalBody.scrollTop += 220;
+                e.preventDefault();
+            } else if (e.key === 'PageUp' || (e.key === ' ' && e.shiftKey)) {
+                modalBody.scrollTop -= 220;
+                e.preventDefault();
             }
         });
 
@@ -666,12 +745,24 @@ jQuery(document).ready(function ($) {
         if (window.banglaqrTimerInterval) {
             clearInterval(window.banglaqrTimerInterval);
         }
-        
-        timeLeft = 15 * 60; // reset to 15 mins
+
+        var durationMinutes = (typeof oi_banglaqr_params !== 'undefined' && typeof oi_banglaqr_params.session_timer_duration !== 'undefined')
+            ? parseInt(oi_banglaqr_params.session_timer_duration, 10)
+            : 15;
+
+        // If timer is disabled (0), hide timer container cleanly
+        if (durationMinutes <= 0) {
+            $('#banglaqr-countdown-timer').hide();
+            return;
+        }
+
+        $('#banglaqr-countdown-timer').show();
+        timeLeft = durationMinutes * 60;
         var timerDisplay = $('#banglaqr-timer-text');
         var timerContainer = $('#banglaqr-countdown-timer');
-        
-        timerDisplay.text('15:00');
+
+        var initMinStr = (durationMinutes < 10 ? '0' + durationMinutes : durationMinutes) + ':00';
+        timerDisplay.text(initMinStr);
         timerContainer.removeClass('danger');
         $('#banglaqr-btn-submit').prop('disabled', false).css({ 'opacity': '1', 'cursor': 'pointer' });
         $('#banglaqr-file-input').prop('disabled', false);
@@ -681,14 +772,14 @@ jQuery(document).ready(function ($) {
             timeLeft--;
             var minutes = Math.floor(timeLeft / 60);
             var seconds = timeLeft % 60;
-            
+
             var displayStr = (minutes < 10 ? '0' + minutes : minutes) + ':' + (seconds < 10 ? '0' + seconds : seconds);
             timerDisplay.text(displayStr);
-            
-            if (timeLeft <= 60) {
+
+            if (timeLeft <= 90) {
                 timerContainer.addClass('danger');
             }
-            
+
             if (timeLeft <= 0) {
                 clearInterval(window.banglaqrTimerInterval);
                 var expiredHtml = '<span>' + escHtml(oi_banglaqr_params.i18n_session_expired) + '</span> <button type="button" id="banglaqr-timer-renew-btn" style="background:#fee2e2; border:1px solid #fecaca; color:#b91c1c; font-weight:700; border-radius:6px; cursor:pointer; padding:2px 8px; margin-left:6px; font-size:12px;">' + escHtml(oi_banglaqr_params.i18n_extend_time) + '</button>';
@@ -1034,9 +1125,19 @@ jQuery(document).ready(function ($) {
         updateModalAmounts();
     });
 
+    // Helper to get currently active payment method (handles radio button and single gateway hidden input)
+    function getActivePaymentMethod() {
+        var $activeRadio = $('input[name="payment_method"]:checked');
+        if ($activeRadio.length) {
+            return $activeRadio.val();
+        }
+        var $hiddenMethod = $('input[name="payment_method"]');
+        return $hiddenMethod.length ? $hiddenMethod.val() : '';
+    }
+
     // Intercept checkout submit button
     $(document).on('click', 'form.checkout #place_order, form#order_review #place_order, #place_order, button[name="woocommerce_checkout_place_order"]', function (e) {
-        var activePaymentMethod = $('input[name="payment_method"]:checked').val();
+        var activePaymentMethod = getActivePaymentMethod();
 
         if (activePaymentMethod === oi_banglaqr_params.gateway_id) {
             var isConfirmed = $('#oi_banglaqr_confirmed').val() === '1';
@@ -1062,7 +1163,29 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // In case WooCommerce triggers submission via event (use delegated event so AJAX fragment refresh never breaks it)
+    // In case WooCommerce triggers submission via direct event on checkout form
+    function bindCheckoutPlaceOrder() {
+        $('form.checkout, form#order_review').off('checkout_place_order_' + oi_banglaqr_params.gateway_id).on('checkout_place_order_' + oi_banglaqr_params.gateway_id, function () {
+            var isConfirmed = $('#oi_banglaqr_confirmed').val() === '1';
+            var receiptId = $('#oi_banglaqr_receipt_id').val();
+            var trxId = $('#oi_banglaqr_transaction_id').val();
+
+            if (isConfirmed || (receiptId && receiptId !== '') || (trxId && trxId !== '')) {
+                return true;
+            }
+
+            if (!validateCheckoutForm()) {
+                return false;
+            }
+
+            openModal();
+            return false;
+        });
+    }
+    bindCheckoutPlaceOrder();
+    $(document.body).on('updated_checkout', bindCheckoutPlaceOrder);
+
+    // Keep delegated fallback on document as well
     $(document).on('checkout_place_order_' + oi_banglaqr_params.gateway_id, 'form.checkout, form#order_review', function () {
         var isConfirmed = $('#oi_banglaqr_confirmed').val() === '1';
         var receiptId = $('#oi_banglaqr_receipt_id').val();
@@ -1092,8 +1215,9 @@ jQuery(document).ready(function ($) {
         openModal();
     });
 
-    // Listen to WooCommerce checkout errors to reset buttons
+    // Listen to WooCommerce checkout errors to reset buttons and state
     $(document.body).on('checkout_error', function () {
+        $('#oi_banglaqr_confirmed').val('0');
         $('#banglaqr-btn-submit').prop('disabled', false).removeClass('loading').html(escHtml(oi_banglaqr_params.i18n_confirm_btn_default || 'Confirm & Place Order'));
         $('#banglaqr-btn-cancel, #banglaqr-remove-file').prop('disabled', false);
         $('.banglaqr-progress-container').hide();

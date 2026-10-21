@@ -53,6 +53,11 @@
     padding: 16px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
 }
 
 .banglaqr-modal-overlay.is-active {
@@ -66,7 +71,6 @@
     width: 100%;
     max-width: min(460px, calc(100vw - 24px));
     box-shadow: var(--banglaqr-shadow-modal);
-    overflow: hidden;
     position: relative;
     transform: translateY(16px) scale(0.98);
     transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -74,6 +78,9 @@
     flex-direction: column;
     max-height: min(92vh, 92dvh);
     box-sizing: border-box;
+    margin: auto;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .banglaqr-modal-overlay.is-active .banglaqr-modal-container {
@@ -145,15 +152,28 @@
 }
 
 .banglaqr-modal-close svg {
-    width: 18px;
-    height: 18px;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2.5px !important;
+    display: block !important;
+}
+
+.banglaqr-modal-close svg path,
+.banglaqr-modal-close svg line {
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2.5px !important;
 }
 
 .banglaqr-modal-body {
     padding: clamp(14px, 3.5vw, 24px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
     display: flex;
     flex-direction: column;
     gap: clamp(10px, 2.5vw, 16px);
@@ -163,6 +183,30 @@
     overflow-wrap: anywhere;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.25) transparent;
+}
+
+.banglaqr-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.banglaqr-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.banglaqr-modal-body::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.22);
+    border-radius: 10px;
+}
+
+.banglaqr-modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.4);
+}
+
+.banglaqr-modal-body > * {
+    flex-shrink: 0;
 }
 
 /* Payable Amount Box */
@@ -196,6 +240,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 8px;
     margin: 3px 0;
 }
@@ -591,20 +636,25 @@
 }
 
 .banglaqr-trx-toggle-btn {
-    width: 100%;
-    background: none;
-    border: 1px dashed var(--banglaqr-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--banglaqr-modal-primary, var(--banglaqr-primary));
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 8px;
-    transition: all 0.2s;
+    width: 100% !important;
+    background: none !important;
+    background-color: transparent !important;
+    border: 1px dashed var(--banglaqr-border) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    color: var(--banglaqr-modal-primary, var(--banglaqr-primary)) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s !important;
+    box-sizing: border-box !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
 }
 
 .banglaqr-trx-toggle-btn:hover,
@@ -696,57 +746,69 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     background-color: #fafbfc;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .banglaqr-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
     font-size: 14px !important;
     font-weight: 700 !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    height: 44px;
-    width: 100%;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    line-height: 44px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    text-decoration: none !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
 }
 
 .banglaqr-btn-submit {
     background: linear-gradient(135deg, var(--banglaqr-modal-primary, var(--banglaqr-primary)) 0%, var(--banglaqr-modal-primary-hover, var(--banglaqr-primary-hover)) 100%) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 10px rgba(19, 120, 51, 0.2);
+    box-shadow: 0 4px 10px rgba(19, 120, 51, 0.2) !important;
 }
 
 .banglaqr-btn-submit:hover,
 .banglaqr-btn-submit:focus {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(19, 120, 51, 0.25);
-    outline: none;
+    box-shadow: 0 8px 16px rgba(19, 120, 51, 0.25) !important;
+    outline: none !important;
 }
 
 .banglaqr-btn-submit:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(19, 120, 51, 0.15);
+    box-shadow: 0 2px 4px rgba(19, 120, 51, 0.15) !important;
 }
 
 .banglaqr-btn-submit.loading {
-    opacity: 0.85;
-    cursor: not-allowed;
-    gap: 8px;
+    opacity: 0.85 !important;
+    cursor: not-allowed !important;
+    gap: 8px !important;
 }
 
 .banglaqr-btn-cancel {
-    background-color: #ffffff;
-    color: var(--banglaqr-text);
-    border: 1px solid var(--banglaqr-input-border);
+    background-color: #ffffff !important;
+    color: var(--banglaqr-text) !important;
+    border: 1px solid var(--banglaqr-input-border) !important;
+    box-shadow: none !important;
 }
 
 .banglaqr-btn-cancel:hover,
 .banglaqr-btn-cancel:focus {
-    background-color: #f8fafc;
-    border-color: #94a3b8;
-    outline: none;
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    outline: none !important;
 }
 
 /* Zoom Overlay */
@@ -834,8 +896,19 @@
 }
 
 .banglaqr-zoom-close svg {
-    width: 18px;
-    height: 18px;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2.5px !important;
+    display: block !important;
+}
+
+.banglaqr-zoom-close svg path,
+.banglaqr-zoom-close svg line {
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2.5px !important;
 }
 
 .banglaqr-zoom-img-wrap {
@@ -1152,8 +1225,8 @@
     .banglaqr-modal-container {
         width: 100%;
         max-width: 100%;
-        max-height: 94dvh;
         max-height: 94vh;
+        max-height: 94dvh;
         border-radius: 18px 18px 10px 10px;
         margin: 0;
     }
@@ -1231,6 +1304,8 @@
         flex-direction: column-reverse;
         padding: 10px 12px;
         gap: 8px;
+        flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .banglaqr-btn {
@@ -1418,5 +1493,87 @@
     font-weight: 700;
     text-decoration: underline;
 }
+
+/* Empty state visual cues */
+.banglaqr-modal-no-qr-card {
+    padding: 28px 18px;
+    text-align: center;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    margin: 12px 0 16px 0;
+}
+
+.banglaqr-modal-no-qr-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 10px auto;
+    background: #fef3c7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banglaqr-modal-no-qr-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #92400e;
+    margin-bottom: 4px;
+}
+
+.banglaqr-modal-no-qr-desc {
+    font-size: 12.5px;
+    color: #b45309;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.banglaqr-empty-meta-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+/* Trust Badge */
+.banglaqr-trust-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin: 6px 0 2px 0;
+    text-align: center;
+    line-height: 1.35;
+    box-sizing: border-box;
+}
+
+.banglaqr-trust-badge svg {
+    flex-shrink: 0;
+    color: #16a34a;
+    width: 14px;
+    height: 14px;
+}
+
+/* Download QR Saved State */
+.banglaqr-download-qr-btn.saved {
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+    color: #15803d !important;
+}
+
 
 

@@ -37,6 +37,16 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->enabled = $this->get_option('enabled');
+        $this->theme_color = $this->get_option('theme_color', '#0A694B');
+        $this->order_status = $this->get_option('order_status', 'on-hold');
+        $this->receipt_rule = $this->get_option('receipt_rule', 'optional');
+        $this->trxid_rule = $this->get_option('trxid_rule', 'optional');
+        $this->enable_manual_payment = $this->get_option('enable_manual_payment', 'no');
+        $this->manual_bkash = $this->get_option('manual_bkash', '');
+        $this->manual_nagad = $this->get_option('manual_nagad', '');
+        $this->manual_rocket = $this->get_option('manual_rocket', '');
+        $this->manual_upay = $this->get_option('manual_upay', '');
+        $this->manual_cellfin = $this->get_option('manual_cellfin', '');
 
         // Set the gateway icon URL for WooCommerce admin payments list
         $logo_url = $this->get_option('gateway_logo', '');
@@ -79,6 +89,12 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         }
 
         $qrs_table = isset($settings['qrs_table']) ? $settings['qrs_table'] : array();
+        if (is_string($qrs_table)) {
+            $decoded = json_decode($qrs_table, true);
+            if (is_array($decoded)) {
+                $qrs_table = $decoded;
+            }
+        }
         if (!is_array($qrs_table) || empty($qrs_table)) {
             return array(
                 'qr_name'        => 'BanglaQR (Primary)',
@@ -184,6 +200,38 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                     'hidden'    => __('Hidden (Do not show)', 'banglaqr-payment-gateway-by-oi'),
                 ),
             ),
+            'session_timer_duration' => array(
+                'title' => __('Session Timer Duration', 'banglaqr-payment-gateway-by-oi'),
+                'type' => 'select',
+                'description' => __('Countdown timer duration displayed in the checkout payment popup.', 'banglaqr-payment-gateway-by-oi'),
+                'default' => '15',
+                'options' => array(
+                    '5'  => __('5 Minutes', 'banglaqr-payment-gateway-by-oi'),
+                    '10' => __('10 Minutes', 'banglaqr-payment-gateway-by-oi'),
+                    '15' => __('15 Minutes (Default)', 'banglaqr-payment-gateway-by-oi'),
+                    '20' => __('20 Minutes', 'banglaqr-payment-gateway-by-oi'),
+                    '30' => __('30 Minutes', 'banglaqr-payment-gateway-by-oi'),
+                    '0'  => __('Disable Timer', 'banglaqr-payment-gateway-by-oi'),
+                ),
+            ),
+            'prevent_duplicate_trxid' => array(
+                'title' => __('Prevent Duplicate TrxID', 'banglaqr-payment-gateway-by-oi'),
+                'type' => 'checkbox',
+                'label' => __('Block checkout submission if the Transaction ID was previously used in another order (Anti-Fraud)', 'banglaqr-payment-gateway-by-oi'),
+                'default' => 'yes',
+            ),
+            'min_trxid_length' => array(
+                'title' => __('Minimum TrxID Length', 'banglaqr-payment-gateway-by-oi'),
+                'type' => 'number',
+                'description' => __('Minimum number of alphanumeric characters required for Transaction ID (e.g. 8 for bKash/Nagad).', 'banglaqr-payment-gateway-by-oi'),
+                'default' => '8',
+            ),
+            'admin_sound_alert' => array(
+                'title' => __('New Order Sound Alert', 'banglaqr-payment-gateway-by-oi'),
+                'type' => 'checkbox',
+                'label' => __('Play a pleasant chime notification when new BanglaQR orders arrive in the admin dashboard', 'banglaqr-payment-gateway-by-oi'),
+                'default' => 'yes',
+            ),
             'enable_manual_payment' => array(
                 'title' => __('Manual Mobile Banking', 'banglaqr-payment-gateway-by-oi'),
                 'type' => 'checkbox',
@@ -247,6 +295,10 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         $order_status = $this->get_option('order_status', 'on-hold');
         $receipt_rule = $this->get_option('receipt_rule', 'optional');
         $trxid_rule = $this->get_option('trxid_rule', 'optional');
+        $session_timer_duration = $this->get_option('session_timer_duration', '15');
+        $prevent_duplicate_trxid = $this->get_option('prevent_duplicate_trxid', 'yes');
+        $min_trxid_length = $this->get_option('min_trxid_length', '8');
+        $admin_sound_alert = $this->get_option('admin_sound_alert', 'yes');
         
         $enable_manual_payment = $this->get_option('enable_manual_payment', 'no');
         $manual_bkash = $this->get_option('manual_bkash', '');
@@ -276,9 +328,9 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 <div class="banglaqr-header-top">
                     <div class="banglaqr-header-info">
                         <div class="banglaqr-logo-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 15h.008v.008H15V15zm0 2.25h.008v.008H15v-.008zM17.25 15h.008v.008H17.25V15zm0 2.25h.008v.008H17.25v-.008zm-2.25 2.25h.008v.008H15v-.008zm2.25 0h.008v.008H17.25v-.008zM19.5 15h.008v.008H19.5V15zm0 2.25h.008v.008H19.5v-.008zm-2.25-4.5h.008v.008H17.25v-.008zm2.25 0h.008v.008H19.5v-.008z" />
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                                <path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/><path d="M20 20h1v1h-1z"/>
                             </svg>
                         </div>
                         <div class="banglaqr-header-title-box">
@@ -287,6 +339,10 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                         </div>
                     </div>
                     <div class="banglaqr-header-actions">
+                        <button type="button" class="button button-primary banglaqr-header-save-btn" id="banglaqr-header-save-btn" title="<?php esc_attr_e('Save all settings', 'banglaqr-payment-gateway-by-oi'); ?>">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            <span><?php esc_html_e('Save Changes', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                        </button>
                         <span class="banglaqr-status-badge <?php echo $enabled === 'yes' ? 'status-active' : 'status-inactive'; ?>">
                             <span class="status-dot"></span>
                             <?php echo $enabled === 'yes' ? esc_html__('Gateway Active', 'banglaqr-payment-gateway-by-oi') : esc_html__('Gateway Inactive', 'banglaqr-payment-gateway-by-oi'); ?>
@@ -296,26 +352,50 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
                 <!-- Quick Configuration Metrics Bar -->
                 <div class="banglaqr-quick-metrics-row">
-                    <div class="banglaqr-metric-pill">
+                    <div class="banglaqr-metric-pill is-interactive" data-tab-target="qrs" title="<?php esc_attr_e('Click to manage QR accounts', 'banglaqr-payment-gateway-by-oi'); ?>">
                         <span class="banglaqr-metric-label"><?php esc_html_e('Active QR', 'banglaqr-payment-gateway-by-oi'); ?></span>
                         <span class="banglaqr-metric-value"><?php echo esc_html($active_qr_name); ?></span>
                         <span class="banglaqr-metric-badge"><?php echo esc_html($active_qr_fee); ?>% <?php esc_html_e('Fee', 'banglaqr-payment-gateway-by-oi'); ?></span>
                     </div>
-                    <div class="banglaqr-metric-pill">
+                    <div class="banglaqr-metric-pill is-interactive" data-tab-target="rules" title="<?php esc_attr_e('Click to configure receipt upload rules', 'banglaqr-payment-gateway-by-oi'); ?>">
                         <span class="banglaqr-metric-label"><?php esc_html_e('Receipt Upload', 'banglaqr-payment-gateway-by-oi'); ?></span>
                         <span class="banglaqr-metric-value"><?php echo esc_html(ucfirst($receipt_rule)); ?></span>
                     </div>
-                    <div class="banglaqr-metric-pill">
+                    <div class="banglaqr-metric-pill is-interactive" data-tab-target="rules" title="<?php esc_attr_e('Click to configure transaction ID & anti-fraud rules', 'banglaqr-payment-gateway-by-oi'); ?>">
                         <span class="banglaqr-metric-label"><?php esc_html_e('Transaction ID', 'banglaqr-payment-gateway-by-oi'); ?></span>
                         <span class="banglaqr-metric-value"><?php echo esc_html(ucfirst($trxid_rule)); ?></span>
                     </div>
-                    <div class="banglaqr-metric-pill">
+                    <div class="banglaqr-metric-pill is-interactive" data-tab-target="manual" title="<?php esc_attr_e('Click to configure manual mobile banking numbers', 'banglaqr-payment-gateway-by-oi'); ?>">
                         <span class="banglaqr-metric-label"><?php esc_html_e('Manual Accounts', 'banglaqr-payment-gateway-by-oi'); ?></span>
                         <span class="banglaqr-metric-value">
                             <?php echo $enable_manual_payment === 'yes' ? esc_html(sprintf(__('%d Active', 'banglaqr-payment-gateway-by-oi'), $configured_manual_count)) : esc_html__('Disabled', 'banglaqr-payment-gateway-by-oi'); ?>
                         </span>
                     </div>
                 </div>
+            </div>
+
+            <!-- Top Segmented Tabs Navigation -->
+            <div class="banglaqr-tabs-nav" role="tablist">
+                <button type="button" class="banglaqr-tab-btn is-active" data-tab="general" role="tab" aria-selected="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                    <span><?php esc_html_e('General Settings', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </button>
+                <button type="button" class="banglaqr-tab-btn" data-tab="rules" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <span><?php esc_html_e('Rules & Anti-Fraud', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </button>
+                <button type="button" class="banglaqr-tab-btn" data-tab="manual" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                    <span><?php esc_html_e('Manual Banking', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </button>
+                <button type="button" class="banglaqr-tab-btn" data-tab="qrs" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/><path d="M20 20h1v1h-1z"/></svg>
+                    <span><?php esc_html_e('QR Accounts', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </button>
+                <button type="button" class="banglaqr-tab-btn" data-tab="all" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span><?php esc_html_e('View All', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </button>
             </div>
 
             <?php
@@ -341,7 +421,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             <div class="banglaqr-settings-panel">
                 
                 <!-- Section 1: General Gateway Settings -->
-                <div class="banglaqr-settings-section">
+                <div class="banglaqr-settings-section" id="banglaqr-section-general" data-tab-content="general">
                     <div class="banglaqr-section-header">
                         <div class="banglaqr-section-icon-badge badge-green">
                             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -357,7 +437,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <!-- Left Column: Branding & Controls -->
                             <div class="banglaqr-card-subpanel">
                                 <h3 class="banglaqr-subpanel-title">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                                     <span><?php esc_html_e('Branding & Availability', 'banglaqr-payment-gateway-by-oi'); ?></span>
                                 </h3>
 
@@ -461,7 +541,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 </div> <!-- End General Settings Section -->
 
                 <!-- Section 2: Checkout Rules & Status (3-Card Matrix) -->
-                <div class="banglaqr-settings-section">
+                <div class="banglaqr-settings-section" id="banglaqr-section-rules" data-tab-content="rules">
                     <div class="banglaqr-section-header">
                         <div class="banglaqr-section-icon-badge badge-blue">
                             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -478,7 +558,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-rule-card">
                                 <div class="banglaqr-rule-card-header">
                                     <div class="banglaqr-rule-icon">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                     </div>
                                     <label for="woocommerce_oi_banglaqr_order_status" class="banglaqr-rule-title">
                                         <?php esc_html_e('Default Order Status', 'banglaqr-payment-gateway-by-oi'); ?>
@@ -499,7 +579,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-rule-card">
                                 <div class="banglaqr-rule-card-header">
                                     <div class="banglaqr-rule-icon">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                                     </div>
                                     <label for="woocommerce_oi_banglaqr_receipt_rule" class="banglaqr-rule-title">
                                         <?php esc_html_e('Receipt Screenshot Rule', 'banglaqr-payment-gateway-by-oi'); ?>
@@ -519,7 +599,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-rule-card">
                                 <div class="banglaqr-rule-card-header">
                                     <div class="banglaqr-rule-icon">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
                                     </div>
                                     <label for="woocommerce_oi_banglaqr_trxid_rule" class="banglaqr-rule-title">
                                         <?php esc_html_e('Transaction ID Rule', 'banglaqr-payment-gateway-by-oi'); ?>
@@ -535,12 +615,85 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                                 </p>
                             </div>
 
+                            <!-- Rule Card 4: Session Timer Duration -->
+                            <div class="banglaqr-rule-card">
+                                <div class="banglaqr-rule-card-header">
+                                    <div class="banglaqr-rule-icon">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    </div>
+                                    <label for="woocommerce_oi_banglaqr_session_timer_duration" class="banglaqr-rule-title">
+                                        <?php esc_html_e('Session Timer Duration', 'banglaqr-payment-gateway-by-oi'); ?>
+                                    </label>
+                                </div>
+                                <select name="woocommerce_oi_banglaqr_session_timer_duration" id="woocommerce_oi_banglaqr_session_timer_duration" class="banglaqr-general-input banglaqr-rule-select">
+                                    <option value="5" <?php selected($session_timer_duration, '5'); ?>><?php esc_html_e('5 Minutes', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                    <option value="10" <?php selected($session_timer_duration, '10'); ?>><?php esc_html_e('10 Minutes', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                    <option value="15" <?php selected($session_timer_duration, '15'); ?>><?php esc_html_e('15 Minutes (Default)', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                    <option value="20" <?php selected($session_timer_duration, '20'); ?>><?php esc_html_e('20 Minutes', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                    <option value="30" <?php selected($session_timer_duration, '30'); ?>><?php esc_html_e('30 Minutes', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                    <option value="0" <?php selected($session_timer_duration, '0'); ?>><?php esc_html_e('Disable Timer (No Expiry)', 'banglaqr-payment-gateway-by-oi'); ?></option>
+                                </select>
+                                <p class="banglaqr-field-tip">
+                                    <?php esc_html_e('Sets how long customers have to complete payment before the session expires.', 'banglaqr-payment-gateway-by-oi'); ?>
+                                </p>
+                            </div>
+
+                            <!-- Rule Card 5: Duplicate TrxID Prevention & Min Length -->
+                            <div class="banglaqr-rule-card">
+                                <div class="banglaqr-rule-card-header">
+                                    <div class="banglaqr-rule-icon">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    </div>
+                                    <label class="banglaqr-rule-title">
+                                        <?php esc_html_e('TrxID Anti-Fraud & Security', 'banglaqr-payment-gateway-by-oi'); ?>
+                                    </label>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                        <input type="checkbox" name="woocommerce_oi_banglaqr_prevent_duplicate_trxid" id="woocommerce_oi_banglaqr_prevent_duplicate_trxid" value="yes" <?php checked($prevent_duplicate_trxid, 'yes'); ?> />
+                                        <span><?php esc_html_e('Block Duplicate TrxID Re-use', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                                    </label>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <label for="woocommerce_oi_banglaqr_min_trxid_length" style="font-size:12px; color:#475569; white-space:nowrap;"><?php esc_html_e('Min Length:', 'banglaqr-payment-gateway-by-oi'); ?></label>
+                                        <input type="number" name="woocommerce_oi_banglaqr_min_trxid_length" id="woocommerce_oi_banglaqr_min_trxid_length" value="<?php echo esc_attr($min_trxid_length); ?>" min="4" max="25" class="banglaqr-general-input" style="width:70px; padding:4px 8px; font-size:12px;" />
+                                    </div>
+                                </div>
+                                <p class="banglaqr-field-tip">
+                                    <?php esc_html_e('Prevents fraudulent re-use of old MFS transaction IDs across different orders.', 'banglaqr-payment-gateway-by-oi'); ?>
+                                </p>
+                            </div>
+
+                            <!-- Rule Card 6: Admin Order Sound Alert -->
+                            <div class="banglaqr-rule-card">
+                                <div class="banglaqr-rule-card-header">
+                                    <div class="banglaqr-rule-icon">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                                    </div>
+                                    <label class="banglaqr-rule-title">
+                                        <?php esc_html_e('New Order Audio Alerts', 'banglaqr-payment-gateway-by-oi'); ?>
+                                    </label>
+                                </div>
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                                    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                        <input type="checkbox" name="woocommerce_oi_banglaqr_admin_sound_alert" id="woocommerce_oi_banglaqr_admin_sound_alert" value="yes" <?php checked($admin_sound_alert, 'yes'); ?> />
+                                        <span><?php esc_html_e('Play Chime on New Order', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                                    </label>
+                                    <button type="button" class="button button-secondary button-small" id="banglaqr-test-sound-btn" style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px;">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                        <span><?php esc_html_e('Test Sound', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                                    </button>
+                                </div>
+                                <p class="banglaqr-field-tip">
+                                    <?php esc_html_e('Plays a notification chime in the admin dashboard when pending orders arrive.', 'banglaqr-payment-gateway-by-oi'); ?>
+                                </p>
+                            </div>
+
                         </div>
                     </div>
                 </div> <!-- End Checkout Rules Section -->
 
                 <!-- Section 3: Manual Payment Accounts (Branded Cards) -->
-                <div class="banglaqr-settings-section">
+                <div class="banglaqr-settings-section" id="banglaqr-section-manual" data-tab-content="manual">
                     <div class="banglaqr-section-header">
                         <div class="banglaqr-section-icon-badge badge-amber">
                             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
@@ -577,7 +730,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-mfs-card mfs-card-bkash">
                                 <div class="banglaqr-mfs-card-header">
                                     <div class="banglaqr-mfs-badge">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
                                         <span>bKash</span>
                                     </div>
                                     <span class="banglaqr-mfs-type-tag"><?php esc_html_e('Merchant / Personal', 'banglaqr-payment-gateway-by-oi'); ?></span>
@@ -591,7 +744,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-mfs-card mfs-card-nagad">
                                 <div class="banglaqr-mfs-card-header">
                                     <div class="banglaqr-mfs-badge">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                                         <span>Nagad</span>
                                     </div>
                                     <span class="banglaqr-mfs-type-tag"><?php esc_html_e('Merchant / Personal', 'banglaqr-payment-gateway-by-oi'); ?></span>
@@ -605,7 +758,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-mfs-card mfs-card-rocket">
                                 <div class="banglaqr-mfs-card-header">
                                     <div class="banglaqr-mfs-badge">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                                         <span>Rocket</span>
                                     </div>
                                     <span class="banglaqr-mfs-type-tag"><?php esc_html_e('12-digit Account', 'banglaqr-payment-gateway-by-oi'); ?></span>
@@ -619,7 +772,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-mfs-card mfs-card-upay">
                                 <div class="banglaqr-mfs-card-header">
                                     <div class="banglaqr-mfs-badge">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
                                         <span>Upay</span>
                                     </div>
                                     <span class="banglaqr-mfs-type-tag"><?php esc_html_e('Merchant / Personal', 'banglaqr-payment-gateway-by-oi'); ?></span>
@@ -633,7 +786,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             <div class="banglaqr-mfs-card mfs-card-cellfin">
                                 <div class="banglaqr-mfs-card-header">
                                     <div class="banglaqr-mfs-badge">
-                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><circle cx="7" cy="15" r="1"/></svg>
                                         <span>CellFin</span>
                                     </div>
                                     <span class="banglaqr-mfs-type-tag"><?php esc_html_e('Account / Card / Phone', 'banglaqr-payment-gateway-by-oi'); ?></span>
@@ -648,7 +801,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 </div> <!-- End Manual Payment Accounts Section -->
 
                 <!-- Section 4: Manage QR Accounts -->
-                <div class="banglaqr-settings-section">
+                <div class="banglaqr-settings-section" id="banglaqr-section-qrs" data-tab-content="qrs">
                     <div class="banglaqr-section-header">
                         <div class="banglaqr-section-icon-badge badge-purple">
                             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/><path d="M20 20h1v1h-1z"/></svg>
@@ -827,7 +980,10 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             'i18n_upload_failed' => __('We could not upload your receipt image. Please try again or use another format.', 'banglaqr-payment-gateway-by-oi'),
             'i18n_copy_amount' => __('Copy', 'banglaqr-payment-gateway-by-oi'),
             'i18n_amount_copied' => __('Copied', 'banglaqr-payment-gateway-by-oi'),
+            'i18n_qr_saved' => __('QR Saved! Scan from Gallery', 'banglaqr-payment-gateway-by-oi'),
             'i18n_change_file' => __('Change', 'banglaqr-payment-gateway-by-oi'),
+            'session_timer_duration' => isset($settings['session_timer_duration']) ? intval($settings['session_timer_duration']) : 15,
+            'min_trxid_length' => isset($settings['min_trxid_length']) ? intval($settings['min_trxid_length']) : 8,
             'receipt_rule' => isset($settings['receipt_rule']) ? $settings['receipt_rule'] : 'optional',
             'trxid_rule' => isset($settings['trxid_rule']) ? $settings['trxid_rule'] : 'optional',
             'enable_manual_payment' => isset($settings['enable_manual_payment']) ? $settings['enable_manual_payment'] : 'no',
@@ -902,6 +1058,41 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 wc_add_notice(__('Please enter your payment Transaction ID (TrxID) to complete this order.', 'banglaqr-payment-gateway-by-oi'), 'error');
             }
 
+            if ($has_trx_id) {
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $trx_clean = strtoupper(trim(sanitize_text_field(wp_unslash($_POST['oi_banglaqr_transaction_id']))));
+                $min_len = intval($this->get_option('min_trxid_length', 8));
+                if ($min_len > 0 && strlen($trx_clean) < $min_len) {
+                    /* translators: %d is the minimum character count */
+                    wc_add_notice(sprintf(__('Transaction ID must be at least %d characters long.', 'banglaqr-payment-gateway-by-oi'), $min_len), 'error');
+                }
+
+                // Anti-fraud duplicate check
+                if ($this->get_option('prevent_duplicate_trxid', 'yes') === 'yes') {
+                    $active_statuses = array_keys(wc_get_order_statuses());
+                    $valid_statuses = array_diff($active_statuses, array('wc-cancelled', 'wc-failed', 'wc-trash'));
+                    $existing_orders = wc_get_orders(array(
+                        'limit'      => 1,
+                        'status'     => $valid_statuses,
+                        'meta_key'   => '_oi_banglaqr_transaction_id',
+                        'meta_value' => $trx_clean,
+                        'return'     => 'ids',
+                    ));
+
+                    if (!empty($existing_orders)) {
+                        $current_order_id = 0;
+                        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                        if (isset($_GET['pay_for_order']) && isset($_GET['key'])) {
+                            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                            $current_order_id = absint(isset($_GET['order_id']) ? $_GET['order_id'] : 0);
+                        }
+                        if (!$current_order_id || !in_array($current_order_id, $existing_orders)) {
+                            wc_add_notice(__('This Transaction ID has already been used in another order. Please check your SMS and enter the correct TrxID.', 'banglaqr-payment-gateway-by-oi'), 'error');
+                        }
+                    }
+                }
+            }
+
             // Require at least one only if both receipt and TrxID are set to optional
             if ($receipt_rule === 'optional' && $trxid_rule === 'optional') {
                 if (!$has_receipt && !$has_trx_id) {
@@ -943,6 +1134,12 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_key($_POST['nonce']), 'oi_banglaqr_upload_slip_action')) {
             wp_send_json_error(array('message' => __('Your checkout session expired. Please refresh the page and try again.', 'banglaqr-payment-gateway-by-oi')));
         }
+
+        // Temporarily increase memory limit and execution time for processing high-res camera photos
+        // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+        @ini_set('memory_limit', '512M');
+        // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
+        @set_time_limit(120);
 
         require_once ABSPATH . 'wp-admin/includes/image.php';
         require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -998,7 +1195,6 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             // Allow the user's original filename
             $raw_name = !empty($file['name']) ? sanitize_text_field(wp_unslash($file['name'])) : 'receipt';
             $info = pathinfo($raw_name);
-            $orig_base = !empty($info['filename']) ? $info['filename'] : 'receipt';
             $orig_ext  = !empty($info['extension']) ? strtolower($info['extension']) : $ext;
 
             // Ensure extension is a valid image extension
@@ -1006,12 +1202,9 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 $orig_ext = $ext;
             }
 
-            // Keep user's original filename, only sanitizing for filesystem safety.
-            $clean_base = sanitize_file_name($orig_base);
-            if (empty($clean_base) || $clean_base === '.') {
-                $clean_base = 'receipt_' . substr(md5($orig_base), 0, 8);
-            }
-            $target_filename = $clean_base . '.' . $orig_ext;
+            // Secure randomized filename to protect customer privacy and prevent path leakage
+            $random_token = wp_generate_password(16, false, false);
+            $target_filename = 'receipt_' . gmdate('Ymd_His') . '_' . $random_token . '.' . $orig_ext;
             $file['name'] = $target_filename;
 
             $overrides = array(
@@ -1052,7 +1245,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
             $attachment = array(
                 'post_mime_type' => $mime_type,
-                'post_title'     => $orig_base,
+                'post_title'     => 'BanglaQR Payment Receipt',
                 'post_content'   => '',
                 'post_status'    => 'inherit',
             );
@@ -1084,17 +1277,13 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
                     $raw_name = !empty($_POST['image_name']) ? sanitize_text_field(wp_unslash($_POST['image_name'])) : 'receipt';
                     $info = pathinfo($raw_name);
-                    $orig_base = !empty($info['filename']) ? $info['filename'] : 'receipt';
                     $orig_ext  = !empty($info['extension']) ? strtolower($info['extension']) : $ext;
                     if (!in_array($orig_ext, array('jpg', 'jpeg', 'png', 'webp', 'gif'), true)) {
                         $orig_ext = $ext;
                     }
 
-                    $clean_base = sanitize_file_name($orig_base);
-                    if (empty($clean_base) || $clean_base === '.') {
-                        $clean_base = 'receipt_' . substr(md5($orig_base), 0, 8);
-                    }
-                    $filename_to_save = $clean_base . '.' . $orig_ext;
+                    $random_token = wp_generate_password(16, false, false);
+                    $filename_to_save = 'receipt_' . gmdate('Ymd_His') . '_' . $random_token . '.' . $ext;
 
                     $upload = wp_upload_bits($filename_to_save, null, $decoded);
 
@@ -1108,7 +1297,7 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
                     $attachment = array(
                         'post_mime_type' => $mime_type,
-                        'post_title'     => $orig_base,
+                        'post_title'     => 'BanglaQR Payment Receipt',
                         'post_content'   => '',
                         'post_status'    => 'inherit',
                     );
@@ -1122,17 +1311,67 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
             wp_send_json_error(array('message' => __('We could not save your receipt image. Please try uploading again.', 'banglaqr-payment-gateway-by-oi')));
         }
 
-        // Safely generate metadata without crashing on memory limits or timeouts
-        if (function_exists('wp_generate_attachment_metadata')) {
-            try {
-                $attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
-                if (!empty($attachment_data) && !is_wp_error($attachment_data)) {
-                    wp_update_attachment_metadata($attachment_id, $attachment_data);
+        // 3. Compress, auto-rotate based on EXIF, and resize uploaded image on filesystem
+        if (!empty($filename) && file_exists($filename)) {
+            $editor = wp_get_image_editor($filename);
+            if (!is_wp_error($editor)) {
+                // 3.1. Fix orientation based on EXIF metadata (crucial for mobile camera uploads)
+                if (function_exists('exif_read_data')) {
+                    $exif = @exif_read_data($filename);
+                    if (!empty($exif['Orientation'])) {
+                        switch ($exif['Orientation']) {
+                            case 3:
+                                $editor->rotate(180);
+                                break;
+                            case 6:
+                                $editor->rotate(270);
+                                break;
+                            case 8:
+                                $editor->rotate(90);
+                                break;
+                        }
+                    }
                 }
-            } catch (\Throwable $e) {
-                // Silently ignore thumbnail generation errors to prevent upload failures
+
+                // 3.2. Resize if image exceeds 1200px in either dimension to optimize server storage
+                $sizes = $editor->get_size();
+                if (isset($sizes['width'], $sizes['height'])) {
+                    $max_dimension = 1200;
+                    if ($sizes['width'] > $max_dimension || $sizes['height'] > $max_dimension) {
+                        $editor->resize($max_dimension, $max_dimension, false);
+                    }
+                }
+
+                // 3.3. Compress JPEG/WebP quality to 75%
+                $editor->set_quality(75);
+                $editor->save($filename);
+
+                clearstatcache(true, $filename);
             }
         }
+
+        // Construct lightweight attachment metadata and skip creating redundant thumbnail sizes
+        $width = 0;
+        $height = 0;
+        if (file_exists($filename)) {
+            $meta_img_info = @getimagesize($filename);
+            if (is_array($meta_img_info)) {
+                $width  = $meta_img_info[0];
+                $height = $meta_img_info[1];
+            }
+        }
+
+        $uploads_dir = wp_get_upload_dir();
+        $relative_file = str_replace(trailingslashit($uploads_dir['basedir']), '', $filename);
+
+        $attachment_data = array(
+            'width'      => $width,
+            'height'     => $height,
+            'file'       => $relative_file,
+            'sizes'      => array(), // Skip redundant thumbnail sizes for receipts to save server storage
+            'filesize'   => file_exists($filename) ? filesize($filename) : 0,
+        );
+        wp_update_attachment_metadata($attachment_id, $attachment_data);
 
         // Security mark to link receipt to customer session
         update_post_meta($attachment_id, '_oi_banglaqr_pending_upload', '1');
@@ -1309,6 +1548,8 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         $allowed_max_size_mb = max(1, round($allowed_max_size / (1024 * 1024))) . 'MB';
         $settings = get_option('woocommerce_oi_banglaqr_settings', array());
         $modal_theme_color = isset($settings['theme_color']) && !empty($settings['theme_color']) ? $settings['theme_color'] : '#0A694B';
+        $timer_duration = isset($settings['session_timer_duration']) ? intval($settings['session_timer_duration']) : 15;
+        $timer_text = sprintf('%02d:00', max(1, $timer_duration));
         ?>
         <div id="banglaqr-modal" class="banglaqr-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="banglaqr-modal-title" style="--banglaqr-primary: <?php echo esc_attr($modal_theme_color); ?>; --banglaqr-modal-primary: <?php echo esc_attr($modal_theme_color); ?>;">
             <div class="banglaqr-modal-container" role="document">
@@ -1330,10 +1571,12 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                         <p class="banglaqr-modal-subtitle"><?php esc_html_e('Scan the QR code with your mobile banking app to pay', 'banglaqr-payment-gateway-by-oi'); ?></p>
                     </div>
                     <div style="display:flex; align-items:center; gap: 12px;">
-                        <div class="banglaqr-countdown-timer" id="banglaqr-countdown-timer">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            <span id="banglaqr-timer-text">15:00</span>
-                        </div>
+                        <?php if ($timer_duration > 0): ?>
+                            <div class="banglaqr-countdown-timer" id="banglaqr-countdown-timer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span id="banglaqr-timer-text"><?php echo esc_html($timer_text); ?></span>
+                            </div>
+                        <?php endif; ?>
                         <button type="button" class="banglaqr-modal-close" id="banglaqr-modal-close-btn" aria-label="<?php esc_attr_e('Close modal', 'banglaqr-payment-gateway-by-oi'); ?>">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </button>
@@ -1343,6 +1586,11 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                 <!-- Body -->
                 <div class="banglaqr-modal-body">
                     <div id="banglaqr-error-banner" class="banglaqr-modal-error" role="alert" aria-live="polite"></div>
+
+                    <div class="banglaqr-trust-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span><?php esc_html_e('Bangladesh Bank Approved BanglaQR Standard', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                    </div>
 
                     <?php if ($active_qr && !empty($active_qr['qr_code_url'])): ?>
                         <div class="banglaqr-payable-amount-box">
@@ -1372,9 +1620,9 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                             </div>
                             <div class="banglaqr-qr-zoom-hint-text"><?php esc_html_e('Tap to enlarge QR code', 'banglaqr-payment-gateway-by-oi'); ?></div>
                             <div class="banglaqr-qr-actions-row">
-                                <a href="<?php echo esc_url($active_qr['qr_code_url']); ?>" download="banglaqr-pay.png" target="_blank" rel="noopener noreferrer" class="banglaqr-download-qr-btn" id="banglaqr-download-qr-btn" title="<?php esc_attr_e('QR কোড সেভ বা ডাউনলোড করুন', 'banglaqr-payment-gateway-by-oi'); ?>">
+                                <a href="<?php echo esc_url($active_qr['qr_code_url']); ?>" download="banglaqr-pay.png" target="_blank" rel="noopener noreferrer" class="banglaqr-download-qr-btn" id="banglaqr-download-qr-btn" title="<?php esc_attr_e('Save or Download QR Code', 'banglaqr-payment-gateway-by-oi'); ?>">
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    <span><?php esc_html_e('QR কোড সেভ / ডাউনলোড করুন', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                                    <span><?php esc_html_e('Save / Download QR Code', 'banglaqr-payment-gateway-by-oi'); ?></span>
                                 </a>
                             </div>
                         </div>
@@ -1383,12 +1631,12 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                         <div class="banglaqr-mobile-helper-box">
                             <div class="banglaqr-mobile-helper-header">
                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                                <strong><?php esc_html_e('মোবাইলে কেনাকাটা করছেন?', 'banglaqr-payment-gateway-by-oi'); ?></strong>
+                                <strong><?php esc_html_e('Shopping from a mobile device?', 'banglaqr-payment-gateway-by-oi'); ?></strong>
                             </div>
                             <p class="banglaqr-mobile-helper-desc">
-                                <?php esc_html_e('১. উপরের QR কোডটি সেভ/স্ক্রিনশট নিন।', 'banglaqr-payment-gateway-by-oi'); ?><br>
-                                <?php esc_html_e('২. আপনার বিকাশ, নগদ বা ব্যাংক অ্যাপ ওপেন করে কিউআর স্ক্যানারে যান এবং "গ্যালারি থেকে স্ক্যান" (Scan from Gallery) দিন।', 'banglaqr-payment-gateway-by-oi'); ?><br>
-                                <?php esc_html_e('৩. অথবা নিচের বাটনে ক্লিক করে সরাসরি নাম্বারে সেন্ড মানি করুন।', 'banglaqr-payment-gateway-by-oi'); ?>
+                                <?php esc_html_e('1. Save or take a screenshot of the QR code above.', 'banglaqr-payment-gateway-by-oi'); ?><br>
+                                <?php esc_html_e('2. Open your bank or MFS app (bKash, Nagad, etc.), go to the QR scanner, and choose "Scan from Gallery".', 'banglaqr-payment-gateway-by-oi'); ?><br>
+                                <?php esc_html_e('3. Or tap the button below to send money directly to the account details.', 'banglaqr-payment-gateway-by-oi'); ?>
                             </p>
                         </div>
 
@@ -1454,8 +1702,14 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                         endif; 
                         ?>
                     <?php else: ?>
-                        <div class="banglaqr-modal-error" style="display:block;">
-                            <?php esc_html_e('No active QR accounts are currently set up. Please contact support or choose another payment method.', 'banglaqr-payment-gateway-by-oi'); ?>
+                        <div class="banglaqr-modal-no-qr-card">
+                            <div class="banglaqr-modal-no-qr-icon">
+                                <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                            </div>
+                            <div class="banglaqr-modal-no-qr-title"><?php esc_html_e('No Active QR Account Found', 'banglaqr-payment-gateway-by-oi'); ?></div>
+                            <p class="banglaqr-modal-no-qr-desc"><?php esc_html_e('No active QR accounts are currently set up. Please contact store support or choose another payment method.', 'banglaqr-payment-gateway-by-oi'); ?></p>
                         </div>
                     <?php endif; ?>
 
@@ -1568,34 +1822,41 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
         <div class="banglaqr-thankyou-receipt-card">
             <div class="banglaqr-thankyou-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="<?php echo esc_attr($brand_color); ?>" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <h4><?php esc_html_e('BanglaQR পেমেন্ট তথ্য সফলভাবে গৃহীত হয়েছে', 'banglaqr-payment-gateway-by-oi'); ?></h4>
+                <h4><?php esc_html_e('BanglaQR payment details received successfully', 'banglaqr-payment-gateway-by-oi'); ?></h4>
             </div>
             <p class="banglaqr-thankyou-note">
-                <?php esc_html_e('ধন্যবাদ! আপনার পেমেন্ট তথ্য আমাদের অ্যাকাউন্টিং টিমে পৌঁছেছে। যাচাই শেষে দ্রুত অর্ডারটি প্রসেস করা হবে।', 'banglaqr-payment-gateway-by-oi'); ?>
+                <?php esc_html_e('Thank you! Your payment details have been forwarded to our team. Your order will be processed shortly after verification.', 'banglaqr-payment-gateway-by-oi'); ?>
             </p>
-            <div class="banglaqr-thankyou-meta-grid">
-                <?php if (!empty($selected_qr)): ?>
-                    <div class="banglaqr-thankyou-meta-item">
-                        <span class="label"><?php esc_html_e('QR অ্যাকাউন্ট:', 'banglaqr-payment-gateway-by-oi'); ?></span>
-                        <span class="val"><?php echo esc_html($selected_qr); ?></span>
-                    </div>
-                <?php endif; ?>
-                <?php if (!empty($trx_id)): ?>
-                    <div class="banglaqr-thankyou-meta-item">
-                        <span class="label"><?php esc_html_e('Transaction ID (TrxID):', 'banglaqr-payment-gateway-by-oi'); ?></span>
-                        <span class="val"><code><?php echo esc_html($trx_id); ?></code></span>
-                    </div>
-                <?php endif; ?>
-                <?php if (!empty($receipt_id)): 
-                    $receipt_url = is_numeric($receipt_id) ? wp_get_attachment_url($receipt_id) : $receipt_id;
-                    if ($receipt_url):
-                ?>
-                    <div class="banglaqr-thankyou-meta-item">
-                        <span class="label"><?php esc_html_e('পেমেন্ট স্লিপ:', 'banglaqr-payment-gateway-by-oi'); ?></span>
-                        <span class="val"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('রিসিট দেখুন', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></span>
-                    </div>
-                <?php endif; endif; ?>
-            </div>
+            <?php if (empty($selected_qr) && empty($trx_id) && empty($receipt_id)): ?>
+                <div class="banglaqr-empty-meta-box">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span><?php esc_html_e('No additional transaction details provided.', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                </div>
+            <?php else: ?>
+                <div class="banglaqr-thankyou-meta-grid">
+                    <?php if (!empty($selected_qr)): ?>
+                        <div class="banglaqr-thankyou-meta-item">
+                            <span class="label"><?php esc_html_e('QR Account:', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                            <span class="val"><?php echo esc_html($selected_qr); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($trx_id)): ?>
+                        <div class="banglaqr-thankyou-meta-item">
+                            <span class="label"><?php esc_html_e('Transaction ID (TrxID):', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                            <span class="val"><code><?php echo esc_html($trx_id); ?></code></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($receipt_id)): 
+                        $receipt_url = is_numeric($receipt_id) ? wp_get_attachment_url($receipt_id) : $receipt_id;
+                        if ($receipt_url):
+                    ?>
+                        <div class="banglaqr-thankyou-meta-item">
+                            <span class="label"><?php esc_html_e('Payment Slip:', 'banglaqr-payment-gateway-by-oi'); ?></span>
+                            <span class="val"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View Receipt', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></span>
+                        </div>
+                    <?php endif; endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
@@ -1647,32 +1908,32 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
 
         if ($plain_text) {
             echo "\n====================================================\n";
-            echo esc_html__("BanglaQR পেমেন্ট বিবরণ:\n", 'banglaqr-payment-gateway-by-oi');
+            echo esc_html__("BanglaQR Payment Details:\n", 'banglaqr-payment-gateway-by-oi');
             if (!empty($selected_qr)) {
-                echo esc_html__("অ্যাকাউন্ট: ", 'banglaqr-payment-gateway-by-oi') . $selected_qr . "\n";
+                echo esc_html__("Account: ", 'banglaqr-payment-gateway-by-oi') . $selected_qr . "\n";
             }
             if (!empty($trx_id)) {
                 echo esc_html__("TrxID: ", 'banglaqr-payment-gateway-by-oi') . $trx_id . "\n";
             }
             if (!empty($receipt_url)) {
-                echo esc_html__("পেমেন্ট স্লিপ: ", 'banglaqr-payment-gateway-by-oi') . $receipt_url . "\n";
+                echo esc_html__("Payment Slip: ", 'banglaqr-payment-gateway-by-oi') . $receipt_url . "\n";
             }
-            echo esc_html__("পেমেন্ট যাচাইয়ের পর অর্ডারটি কনফার্ম করা হবে।\n", 'banglaqr-payment-gateway-by-oi');
+            echo esc_html__("The order will be confirmed after payment verification.\n", 'banglaqr-payment-gateway-by-oi');
             echo "====================================================\n\n";
         } else {
             $brand_color = !empty($this->theme_color) ? $this->theme_color : '#0A694B';
             ?>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin:20px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
                 <h3 style="margin-top:0; color:<?php echo esc_attr($brand_color); ?>; font-size:16px; display:flex; align-items:center;">
-                    <?php esc_html_e('BanglaQR পেমেন্ট বিবরণ', 'banglaqr-payment-gateway-by-oi'); ?>
+                    <?php esc_html_e('BanglaQR Payment Details', 'banglaqr-payment-gateway-by-oi'); ?>
                 </h3>
                 <p style="margin:4px 0 12px 0; color:#334155; font-size:14px;">
-                    <?php esc_html_e('আপনার পেমেন্ট তথ্য জমা নেওয়া হয়েছে। আমাদের টিম যাচাই শেষে অর্ডারটি সম্পন্ন করবে।', 'banglaqr-payment-gateway-by-oi'); ?>
+                    <?php esc_html_e('Your payment details have been received. Our team will process the order once verified.', 'banglaqr-payment-gateway-by-oi'); ?>
                 </p>
                 <table style="width:100%; border-collapse:collapse; font-size:13px; color:#475569;">
                     <?php if (!empty($selected_qr)): ?>
                         <tr>
-                            <td style="padding:4px 0; font-weight:600; width:140px;"><?php esc_html_e('QR অ্যাকাউন্ট:', 'banglaqr-payment-gateway-by-oi'); ?></td>
+                            <td style="padding:4px 0; font-weight:600; width:140px;"><?php esc_html_e('QR Account:', 'banglaqr-payment-gateway-by-oi'); ?></td>
                             <td style="padding:4px 0; color:#0f172a;"><?php echo esc_html($selected_qr); ?></td>
                         </tr>
                     <?php endif; ?>
@@ -1684,8 +1945,8 @@ class Oi_BanglaQR_Gateway extends WC_Payment_Gateway
                     <?php endif; ?>
                     <?php if (!empty($receipt_url)): ?>
                         <tr>
-                            <td style="padding:4px 0; font-weight:600;"><?php esc_html_e('পেমেন্ট স্লিপ:', 'banglaqr-payment-gateway-by-oi'); ?></td>
-                            <td style="padding:4px 0;"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" style="color:<?php echo esc_attr($brand_color); ?>; font-weight:700; text-decoration:underline;"><?php esc_html_e('রিসিট দেখুন', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></td>
+                            <td style="padding:4px 0; font-weight:600;"><?php esc_html_e('Payment Slip:', 'banglaqr-payment-gateway-by-oi'); ?></td>
+                            <td style="padding:4px 0;"><a href="<?php echo esc_url($receipt_url); ?>" target="_blank" style="color:<?php echo esc_attr($brand_color); ?>; font-weight:700; text-decoration:underline;"><?php esc_html_e('View Receipt', 'banglaqr-payment-gateway-by-oi'); ?> &rarr;</a></td>
                         </tr>
                     <?php endif; ?>
                 </table>

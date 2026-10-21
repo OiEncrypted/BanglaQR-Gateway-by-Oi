@@ -81,5 +81,9 @@ wp-content/upgrade/
 !/banglaqr-gateway.php
 
 # Local Samples & Backups
+sample/
+samples/
+backup/
+backups/
 *-sample/
 *-backup/

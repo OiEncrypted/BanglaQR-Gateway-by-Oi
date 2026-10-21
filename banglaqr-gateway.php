@@ -3,16 +3,16 @@
  * Plugin Name: BanglaQR Gateway by Oi
  * Plugin URI: https://oitech.com.bd/open-source/
  * Description: A payment gateway supporting bank and mobile QR payments with a scan-to-pay popup and payment receipt upload verification.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: Oi Technologies
  * Author URI: https://oitech.com.bd/
  * License: GPLv3 or later
  * Domain Path: /languages
- * Tested up to: 6.7
+ * Tested up to: 7.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * WC requires at least: 5.0
- * WC tested up to: 9.4
+ * WC tested up to: 9.8
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: banglaqr-payment-gateway-by-oi
  */
@@ -20,7 +20,7 @@
 defined('ABSPATH') || exit;
 
 // Define plugin-wide constants
-define('OI_BANGLAQR_VERSION', '0.3.0');
+define('OI_BANGLAQR_VERSION', '0.3.1');
 define('OI_BANGLAQR_PATH', plugin_dir_path(__FILE__));
 define('OI_BANGLAQR_URL', plugin_dir_url(__FILE__));
 define('OI_BANGLAQR_BASENAME', plugin_basename(__FILE__));

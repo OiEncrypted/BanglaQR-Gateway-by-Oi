@@ -6,8 +6,8 @@ Security updates and patches are actively maintained for the latest stable relea
 
 | Version | Status | Supported PHP | Supported WordPress | WooCommerce HPOS |
 |:---:|:---:|:---:|:---:|:---:|
-| **0.2.x** | :white_check_mark: Active | 7.4 – 8.3+ | 5.6 – 6.7+ | Compatible |
-| **< 0.2.0** | :x: End of Life | — | — | — |
+| **0.3.x** | :white_check_mark: Active | 7.4 – 8.3+ | 5.6 – 6.7+ | Compatible |
+| **< 0.3.0** | :x: End of Life | — | — | — |
 
 ---
 

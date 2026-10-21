@@ -36,7 +36,7 @@ assignees: ""
 | **WordPress Version** | e.g. 6.7 |
 | **WooCommerce Version** | e.g. 9.1 |
 | **WooCommerce HPOS Enabled?** | Yes / No / Legacy CPT |
-| **Plugin Version** | e.g. 0.2.0 |
+| **Plugin Version** | e.g. 0.3.0 |
 | **PHP Version** | e.g. 8.2 |
 | **Browser & Version** | e.g. Chrome 125, Safari 17 |
 | **Device & OS** | e.g. Windows 11 / Android 14 / iPhone 15 iOS 17 |

@@ -1,0 +1,1012 @@
+# Copyright (C) 2026 Oi Technologies
+# This file is distributed under the GPLv3 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: BanglaQR Gateway by Oi 0.3.0\n"
+"Report-Msgid-Bugs-To: https://github.com/Oi-Technologies-Official/BanglaQR-Payment-Gateway-by-Oi/issues\n"
+"POT-Creation-Date: 2026-10-16 11:20+0600\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: Poedit 3.4.4\n"
+"X-Domain: banglaqr-payment-gateway-by-oi\n"
+
+#: includes/class-oi-banglaqr-admin.php:89
+msgid "% Fee"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:325
+msgid "%d Active"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:816
+msgid "%s is required."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1362
+msgid "(Includes %s%% payment processing fee)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1364
+msgid "(No extra fees applied)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1393
+msgid "1. Save or take a screenshot of the QR code above."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:621
+msgid "12-digit Account"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1394
+msgid "2. Open your bank or MFS app (bKash, Nagad, etc.), go to the QR scanner, and choose \"Scan from Gallery\"."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1395
+msgid "3. Or tap the button below to send money directly to the account details."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:132
+msgid "A brand icon or logo displayed beside the payment title on checkout."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:433
+msgid "Accent color used for checkout modal banners, buttons, and status indicators."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1402
+msgid "Accepted Payment Methods"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:649
+msgid "Account / Card / Phone"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:95
+msgid "Account Name"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:821
+msgid "Account:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1669
+msgid "Account: "
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:283
+msgid "Action"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:91
+msgid "Active"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:310
+msgid "Active QR"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:102
+msgid "Active on Checkout"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:107
+msgid "Add Another QR Account"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:106
+msgid "Add First QR Account"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:146
+msgid "Add your payment QR codes and choose which account is active on checkout."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:668
+msgid "Add, reorder, and activate QR accounts. The active account will be displayed in the checkout popup."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:524
+msgid "Allows customers to upload their payment screenshot or bank receipt as proof."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:544
+msgid "Allows shoppers to submit their 8-10 digit bank/MFS transaction identifier."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:281
+msgid "Amount"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:86
+msgid "Are you sure you want to remove this QR account?"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1243
+msgid "Awaiting payment verification for Bangla QR."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:29
+#: includes/class-oi-banglaqr-gateway.php:126
+#: includes/class-oi-banglaqr-gateway.php:1333
+msgid "Bangla QR Payment"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:440
+msgid "Bangla QR Payment Details"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:226
+msgid "BanglaQR - Orders & Payment Verification"
+msgstr ""
+
+#: banglaqr-gateway.php:95
+msgid "BanglaQR Gateway by Oi requires WooCommerce to be installed and active. The plugin is currently disabled."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1684
+msgid "BanglaQR Payment Details"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1667
+msgid "BanglaQR Payment Details:\\n"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:354
+msgid "BanglaQR Payment Receipt & Transaction Details"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:295
+msgid "BanglaQR Settings"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1581
+msgid "BanglaQR payment details received successfully"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:377
+msgid "BanglaQR was not used for this order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:371
+msgid "Branding & Availability"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:361
+msgid "Branding, accent theme color, and customer-facing checkout presentation."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1527
+msgid "Cancel"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:232
+msgid "CellFin Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:840
+msgid "Change"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:429
+msgid "Change Color"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:461
+msgid "Checkout Description"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:442
+msgid "Checkout Presentation"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:480
+msgid "Checkout Rules & Order Status"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:449
+msgid "Checkout Title"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1483
+msgid "Choose or drop payment screenshot"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:159
+msgid "Choose the accent color for popup buttons and highlights to match your store theme."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:178
+msgid "Choose whether customers must attach a payment screenshot before placing their order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:189
+msgid "Choose whether customers must enter their payment Transaction ID before placing their order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:827
+msgid "Close Full View"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1541
+msgid "Close enlarged QR"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1341
+msgid "Close modal"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:171
+#: includes/class-oi-banglaqr-gateway.php:500
+msgid "Completed"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:296
+msgid "Configure your QR accounts, transaction processing fees, and checkout payment rules."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:835
+#: includes/class-oi-banglaqr-gateway.php:1528
+msgid "Confirm & Place Order"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:834
+msgid "Confirming Order..."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:839
+msgid "Copied"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:474
+msgid "Copied!"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:476
+#: includes/class-oi-banglaqr-gateway.php:838
+#: includes/class-oi-banglaqr-gateway.php:1358
+#: includes/class-oi-banglaqr-gateway.php:1447
+msgid "Copy"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1356
+msgid "Copy Amount"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1445
+msgid "Copy Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:280
+msgid "Customer"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:164
+#: includes/class-oi-banglaqr-gateway.php:494
+msgid "Default Order Status"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:481
+msgid "Define order status and payment verification requirements for shoppers."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:109
+#: includes/class-oi-banglaqr-gateway.php:325
+msgid "Disabled"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:413
+msgid "Displayed beside the gateway title on the checkout page for trust recognition."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1549
+msgid "Done / Back to Checkout"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:820
+msgid "Edit"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:119
+msgid "Enable BanglaQR Gateway by Oi"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:384
+msgid "Enable Gateway on Checkout"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:575
+msgid "Enable Manual Payment Accounts"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:117
+msgid "Enable/Disable"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:108
+msgid "Enabled"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1370
+msgid "Enlarge QR Code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1534
+msgid "Enlarged QR Code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:830
+msgid "Extend Time (15 min)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:312
+msgid "Fee"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:110
+#: includes/class-oi-banglaqr-gateway.php:302
+msgid "Gateway Active"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:111
+#: includes/class-oi-banglaqr-gateway.php:302
+msgid "Gateway Inactive"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:130
+#: includes/class-oi-banglaqr-gateway.php:396
+msgid "Gateway Logo"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:360
+msgid "General Gateway Settings"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:294
+msgid "Guest"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1502
+msgid "Have a Transaction ID? Enter it here"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:139
+msgid "Helpful payment instructions displayed when customers select this gateway."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:183
+#: includes/class-oi-banglaqr-gateway.php:194
+#: includes/class-oi-banglaqr-gateway.php:521
+#: includes/class-oi-banglaqr-gateway.php:541
+msgid "Hidden (Do not show)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:92
+msgid "Inactive"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:465
+msgid "Informative guidance displayed below the title when shoppers select this payment method."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:387
+msgid "Make this payment method active and visible to customers."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:667
+msgid "Manage QR Accounts"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:192
+#: includes/class-oi-banglaqr-gateway.php:540
+msgid "Mandatory (Must enter)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:181
+#: includes/class-oi-banglaqr-gateway.php:520
+msgid "Mandatory (Must upload)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:323
+msgid "Manual Accounts"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:198
+msgid "Manual Mobile Banking"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:559
+msgid "Manual Payment Accounts"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:593
+#: includes/class-oi-banglaqr-gateway.php:607
+#: includes/class-oi-banglaqr-gateway.php:635
+msgid "Merchant / Personal"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:211
+msgid "Nagad Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:88
+msgid "New QR Account"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1467
+msgid "No Active QR Account Found"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:90
+msgid "No Fee"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:457
+msgid "No Transaction Information"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1468
+msgid "No active QR accounts are currently set up. Please contact store support or choose another payment method."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1589
+msgid "No additional transaction details provided."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:272
+msgid "No pending BanglaQR orders at the moment. All verified!"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:321
+msgid "None"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:270
+msgid "None Selected"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:169
+#: includes/class-oi-banglaqr-gateway.php:498
+msgid "On-Hold (Recommended)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1408
+msgid "Open your bank or mobile wallet app (bKash, Nagad, Rocket, CellFin, etc.) and scan the QR code to pay. Then confirm your payment below."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:182
+#: includes/class-oi-banglaqr-gateway.php:193
+#: includes/class-oi-banglaqr-gateway.php:519
+#: includes/class-oi-banglaqr-gateway.php:539
+msgid "Optional (Recommended)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:279
+msgid "Order"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:406
+msgid "Paste logo image URL or upload"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1353
+msgid "Payable Amount"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:137
+msgid "Payment Description"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:819
+msgid "Payment Details Attached"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:825
+#: includes/class-oi-banglaqr-gateway.php:1326
+msgid "Payment Details Received!"
+msgstr ""
+
+#: banglaqr-gateway.php:188
+msgid "Payment Processing Fee (%s%%)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:484
+#: includes/class-oi-banglaqr-gateway.php:828
+msgid "Payment Receipt"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1610
+#: includes/class-oi-banglaqr-gateway.php:1704
+msgid "Payment Slip:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1675
+msgid "Payment Slip: "
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:123
+msgid "Payment Title"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:262
+msgid "Pending Orders (Awaiting Verification)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:172
+#: includes/class-oi-banglaqr-gateway.php:501
+msgid "Pending Payment"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:818
+msgid "Please check the box to agree to the website terms and conditions."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:817
+msgid "Please enter a valid email address for %s."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:912
+msgid "Please enter your payment Transaction ID (TrxID) to complete this order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:832
+msgid "Please enter your payment Transaction ID before completing your order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:918
+msgid "Please provide either a payment receipt screenshot or your Transaction ID to complete this order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:988
+msgid "Please select a receipt image file to upload."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:996
+msgid "Please select a valid image file to upload."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:814
+#: includes/class-oi-banglaqr-gateway.php:1002
+#: includes/class-oi-banglaqr-gateway.php:1087
+msgid "Please upload a valid image file (JPEG, PNG, or WebP)."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:831
+msgid "Please upload your payment receipt screenshot before completing your order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:908
+msgid "Please upload your payment receipt screenshot to complete this order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:813
+msgid "Please upload your payment screenshot or enter your Transaction ID to confirm your order."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1433
+msgid "Prefer to pay manually? View mobile wallet numbers"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:170
+#: includes/class-oi-banglaqr-gateway.php:499
+msgid "Processing"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:97
+msgid "Processing Fee (%)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:560
+msgid "Provide direct mobile wallet numbers for customers who prefer sending money manually."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1595
+#: includes/class-oi-banglaqr-gateway.php:1692
+msgid "QR Account:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:144
+msgid "QR Accounts"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:99
+msgid "QR Code Image"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1233
+msgid "QR: %s"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:176
+#: includes/class-oi-banglaqr-gateway.php:515
+msgid "Receipt Screenshot Rule"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:315
+msgid "Receipt Upload"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:823
+msgid "Receipt:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1240
+msgid "Receipt: Attached"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:30
+msgid "Receive payments through Bangladeshi Bank/Mobile QR codes (Bkash, Nagad, Rocket, Bank QR, etc.)."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:104
+msgid "Remove Account"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:218
+msgid "Rocket Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1381
+msgid "Save / Download QR Code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1379
+msgid "Save or Download QR Code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:93
+msgid "Scan Preview"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1548
+msgid "Scan directly from your screen using your bank or mobile wallet app."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:140
+msgid "Scan the QR code with any banking or MFS app (bKash, Nagad, Rocket, CellFin, etc.) to complete your payment."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1334
+msgid "Scan the QR code with your mobile banking app to pay"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1539
+msgid "Scan to Pay"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1375
+msgid "Scan with Your App"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:94
+msgid "Scan with your phone to confirm this QR code reads properly."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:112
+msgid "Select Gateway Logo"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:84
+msgid "Select QR Image"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:103
+msgid "Set as Active"
+msgstr ""
+
+#: banglaqr-gateway.php:48
+msgid "Settings"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1390
+msgid "Shopping from a mobile device?"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:200
+msgid "Show direct mobile banking numbers for customers who prefer sending money manually"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:578
+msgid "Shows a \"Prefer manual payment?\" dropdown in the checkout modal with copyable numbers."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:314
+msgid "Slip"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:504
+msgid "Status assigned immediately after customer confirms payment in the checkout popup."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:833
+msgid "Submitting Receipt..."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1484
+msgid "Supports JPEG, PNG, WEBP up to %s"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1370
+msgid "Tap or click to view larger QR code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1377
+msgid "Tap to enlarge QR code"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:826
+#: includes/class-oi-banglaqr-gateway.php:1327
+msgid "Thank you! We are confirming your order now..."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1584
+msgid "Thank you! Your payment details have been forwarded to our team. Your order will be processed shortly after verification."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:458
+msgid "The customer did not provide a payment receipt or Transaction ID."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1677
+msgid "The order will be confirmed after payment verification.\\n"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:453
+msgid "The payment gateway name shown in the WooCommerce checkout payment list."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:125
+msgid "The payment method title shown to your customers at checkout."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:166
+msgid "The status assigned to new orders once a customer submits their payment confirmation."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:491
+msgid "The uploaded receipt screenshot could not be loaded or was removed from the media library."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:157
+#: includes/class-oi-banglaqr-gateway.php:421
+msgid "Theme Accent Color"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:990
+msgid "This image file is too large. Please choose a smaller photo or screenshot."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:815
+msgid "This image is too large. Maximum allowed size is %s."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:319
+msgid "Transaction ID"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:467
+msgid "Transaction ID (TrxID)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1509
+msgid "Transaction ID (TrxID) / Reference"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1601
+#: includes/class-oi-banglaqr-gateway.php:1698
+msgid "Transaction ID (TrxID):"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:187
+#: includes/class-oi-banglaqr-gateway.php:535
+msgid "Transaction ID Rule"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:822
+msgid "Transaction ID:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:282
+msgid "TrxID / Slip"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1672
+msgid "TrxID: "
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1237
+msgid "TrxID: %s"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:225
+msgid "Upay Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:101
+#: includes/class-oi-banglaqr-gateway.php:409
+msgid "Upload"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1476
+msgid "Upload Payment Screenshot or Receipt"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:100
+msgid "Upload or paste image URL"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1481
+msgid "Upload payment screenshot"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:113
+msgid "Use Logo"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:85
+msgid "Use This QR Image"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:327
+msgid "Verify"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:265
+msgid "View All Orders"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:444
+msgid "View Full Image"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:824
+#: includes/class-oi-banglaqr-gateway.php:1611
+#: includes/class-oi-banglaqr-gateway.php:1705
+msgid "View Receipt"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:312
+msgid "View Slip"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1054
+#: includes/class-oi-banglaqr-gateway.php:1126
+msgid "We could not save your receipt image. Please try uploading again."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:836
+msgid "We could not upload your receipt due to a network connection issue. Please check your internet and try again."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:837
+msgid "We could not upload your receipt image. Please try again or use another format."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:344
+msgid "WooCommerce Checkout Blocks Detected"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:237
+msgid "WooCommerce is required."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1518
+msgid "You can find this in your bank or mobile wallet confirmation SMS / receipt."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:105
+msgid "You have not added any QR accounts yet. Add your first account to start accepting QR payments."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:234
+msgid "Your CellFin account or card number."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:213
+msgid "Your Nagad personal or merchant account number."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:220
+msgid "Your Rocket personal or merchant account number."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:227
+msgid "Your Upay personal or merchant account number."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:206
+msgid "Your bKash personal or merchant account number."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:954
+msgid "Your checkout session expired. Please refresh the page and try again."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1687
+msgid "Your payment details have been received. Our team will process the order once verified."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:829
+msgid "Your payment session has expired."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:345
+msgid "Your store is currently using the Gutenberg Checkout Block. BanglaQR Gateway provides an interactive scan-to-pay modal and verified receipt uploader which operates with the WooCommerce Classic Checkout shortcode [woocommerce_checkout]. If BanglaQR does not display on your checkout page, please edit your Checkout page and replace the block with the Classic Checkout shortcode."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:204
+msgid "bKash Number"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:98
+msgid "e.g. 1.85 (leave 0 for no fee)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1516
+msgid "e.g. 9K28DF109X or Bank Reference"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:463
+msgid "e.g. Scan the QR code using your bKash, Nagad, Rocket, CellFin, or mobile banking app to pay securely."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php:96
+msgid "e.g. bKash Merchant, City Bank BanglaQR"
+msgstr ""
+
+
+#: includes/class-oi-banglaqr-gateway.php:846
+msgid "QR Saved! Scan from Gallery"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php:1413
+msgid "Bangladesh Bank Approved BanglaQR Standard"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php
+msgid "Session Timer Duration"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php
+msgid "Disable Timer (No Expiry)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php
+msgid "Prevent Duplicate TrxID"
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php
+msgid "This Transaction ID has already been used in another order. Please check your SMS and enter the correct TrxID."
+msgstr ""
+
+#: includes/class-oi-banglaqr-gateway.php
+msgid "Transaction ID must be at least %d characters long."
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Quick Verification:"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Approve (Processing)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Reject (Failed)"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Payment Approved & Processing"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Payment Rejected / Cancelled"
+msgstr ""
+
+#: includes/class-oi-banglaqr-admin.php
+msgid "Rotate"
+msgstr ""

@@ -5,11 +5,197 @@
 
 jQuery(document).ready(function ($) {
     // Safety check
-    if (typeof oi_banglaqr_admin_params === 'undefined' || !$('#woocommerce_oi_banglaqr_qrs_table').length) {
-        console.warn("BanglaQR admin.js: Params undefined or table input not found. Exiting.", {
-            params: typeof oi_banglaqr_admin_params,
-            tableLength: $('#woocommerce_oi_banglaqr_qrs_table').length
+    if (typeof oi_banglaqr_admin_params === 'undefined') {
+        return;
+    }
+
+    // =========================================================================
+    // 1. Audio Alert Notification (Web Audio API Synthesizer)
+    // =========================================================================
+    function playBanglaQRChime() {
+        try {
+            var AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            var ctx = new AudioCtx();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            var now = ctx.currentTime;
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now); // D5
+            osc.frequency.setValueAtTime(880, now + 0.12); // A5
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.6);
+        } catch (e) {
+            console.warn('BanglaQR: Web Audio chime failed', e);
+        }
+    }
+
+    // Check if new pending orders arrived since last admin page load
+    if (oi_banglaqr_admin_params.sound_alert_enabled) {
+        var currentPending = parseInt(oi_banglaqr_admin_params.pending_orders_count, 10) || 0;
+        var lastPending = parseInt(localStorage.getItem('oi_banglaqr_pending_count'), 10);
+
+        if (!isNaN(lastPending) && currentPending > lastPending) {
+            playBanglaQRChime();
+        }
+        localStorage.setItem('oi_banglaqr_pending_count', currentPending);
+    }
+
+    // Test Sound button on settings page
+    $(document).on('click', '#banglaqr-test-sound-btn', function (e) {
+        e.preventDefault();
+        playBanglaQRChime();
+        var $btn = $(this);
+        var origText = $btn.find('span').text();
+        $btn.find('span').text(oi_banglaqr_admin_params.i18n_sound_tested || 'Played!');
+        setTimeout(function () {
+            $btn.find('span').text(origText);
+        }, 1800);
+    });
+
+    // =========================================================================
+    // 2. Slip Lightbox Modal Viewer
+    // =========================================================================
+    var currentRotation = 0;
+
+    $(document).on('click', '.banglaqr-admin-lightbox-trigger', function (e) {
+        e.preventDefault();
+        var url = $(this).attr('data-slip-url') || $(this).attr('src') || $(this).attr('href');
+        var orderLabel = $(this).attr('data-order') || '';
+
+        if (!url) return;
+
+        currentRotation = 0;
+        $('#banglaqr-admin-lightbox-img').attr('src', url).css('transform', 'rotate(0deg)');
+        $('#banglaqr-admin-lightbox-external-btn').attr('href', url);
+        $('#banglaqr-admin-lightbox-order-badge').text(orderLabel ? orderLabel : 'Slip');
+        $('#banglaqr-admin-slip-lightbox').fadeIn(150);
+    });
+
+    $(document).on('click', '#banglaqr-admin-lightbox-close-btn, #banglaqr-admin-slip-lightbox', function (e) {
+        if (e.target === this || $(this).is('#banglaqr-admin-lightbox-close-btn') || $(this).closest('#banglaqr-admin-lightbox-close-btn').length) {
+            e.preventDefault();
+            $('#banglaqr-admin-slip-lightbox').fadeOut(120);
+        }
+    });
+
+    $(document).on('click', '#banglaqr-admin-lightbox-rotate-btn', function (e) {
+        e.preventDefault();
+        currentRotation = (currentRotation + 90) % 360;
+        $('#banglaqr-admin-lightbox-img').css('transform', 'rotate(' + currentRotation + 'deg)');
+    });
+
+    // Close on Escape key
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && $('#banglaqr-admin-slip-lightbox').is(':visible')) {
+            $('#banglaqr-admin-slip-lightbox').fadeOut(120);
+        }
+    });
+
+    // =========================================================================
+    // 3. 1-Click Quick Order Status Actions (Approve / Reject)
+    // =========================================================================
+    $(document).on('click', '.banglaqr-qa-approve', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var orderId = $btn.data('order-id');
+        if (!orderId || $btn.prop('disabled')) return;
+
+        $btn.prop('disabled', true).find('span').text(oi_banglaqr_admin_params.i18n_approving || 'Approving...');
+
+        $.ajax({
+            url: oi_banglaqr_admin_params.ajax_url,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'oi_banglaqr_quick_order_status',
+                nonce: oi_banglaqr_admin_params.admin_nonce,
+                order_id: orderId,
+                status_action: 'approve'
+            },
+            success: function (res) {
+                if (res && res.success) {
+                    var $container = $('#banglaqr-admin-qa-' + orderId);
+                    if ($container.length && res.data && res.data.status_pill_html) {
+                        $container.html(res.data.status_pill_html);
+                    }
+                    var $orderStatusSelect = $('select#order_status');
+                    if ($orderStatusSelect.length) {
+                        $orderStatusSelect.val('wc-processing').trigger('change');
+                    }
+                } else {
+                    alert((res && res.data && res.data.message) ? res.data.message : 'Error approving payment.');
+                    $btn.prop('disabled', false).find('span').text('Approve (Processing)');
+                }
+            },
+            error: function () {
+                alert('Network error while processing request.');
+                $btn.prop('disabled', false).find('span').text('Approve (Processing)');
+            }
         });
+    });
+
+    $(document).on('click', '.banglaqr-qa-reject', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var orderId = $btn.data('order-id');
+        if (!orderId || $btn.prop('disabled')) return;
+
+        var reason = prompt(oi_banglaqr_admin_params.i18n_confirm_reject + '\n' + (oi_banglaqr_admin_params.i18n_reject_reason_prompt || 'Reason:'));
+        if (reason === null) {
+            return;
+        }
+
+        $btn.prop('disabled', true).find('span').text(oi_banglaqr_admin_params.i18n_rejecting || 'Rejecting...');
+
+        $.ajax({
+            url: oi_banglaqr_admin_params.ajax_url,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'oi_banglaqr_quick_order_status',
+                nonce: oi_banglaqr_admin_params.admin_nonce,
+                order_id: orderId,
+                status_action: 'reject',
+                note: reason
+            },
+            success: function (res) {
+                if (res && res.success) {
+                    var $container = $('#banglaqr-admin-qa-' + orderId);
+                    if ($container.length && res.data && res.data.status_pill_html) {
+                        $container.html(res.data.status_pill_html);
+                    }
+                    var $orderStatusSelect = $('select#order_status');
+                    if ($orderStatusSelect.length) {
+                        $orderStatusSelect.val('wc-failed').trigger('change');
+                    }
+                } else {
+                    alert((res && res.data && res.data.message) ? res.data.message : 'Error rejecting payment.');
+                    $btn.prop('disabled', false).find('span').text('Reject (Failed)');
+                }
+            },
+            error: function () {
+                alert('Network error while processing request.');
+                $btn.prop('disabled', false).find('span').text('Reject (Failed)');
+            }
+        });
+    });
+
+    // =========================================================================
+    // 4. Settings Page: QR Accounts Accordion Manager
+    // =========================================================================
+    if (!$('#woocommerce_oi_banglaqr_qrs_table').length) {
         return;
     }
 
@@ -90,13 +276,16 @@ jQuery(document).ready(function ($) {
         html += '    <div class="banglaqr-accordion-body-inner">';
         
         // Left Column: Scan Preview
-        var largePreviewStyle = qrCodeUrl ? 'display: block;' : 'display: none;';
-        html += '      <div class="banglaqr-large-qr-preview-wrapper" style="' + largePreviewStyle + '">';
+        html += '      <div class="banglaqr-large-qr-preview-wrapper">';
         html += '        <div class="banglaqr-grid-field"><label class="banglaqr-field-label-with-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>' + oi_banglaqr_admin_params.i18n_scan_preview + '</span></label></div>';
-        html += '        <div class="banglaqr-large-qr-preview-box">';
+        html += '        <div class="banglaqr-large-qr-preview-box" style="' + (qrCodeUrl ? 'display:flex;' : 'display:none;') + '">';
         html += '          <img class="banglaqr-large-qr-preview-img" src="' + escapeAttr(qrCodeUrl) + '" alt="QR Preview" />';
         html += '        </div>';
-        html += '        <span style="font-size: 11px; color: #64748b; margin-top: 6px; display: block; line-height: 1.4;">' + oi_banglaqr_admin_params.i18n_scan_hint + '</span>';
+        html += '        <div class="banglaqr-large-qr-empty-box" style="' + (qrCodeUrl ? 'display:none;' : 'display:flex;') + '">';
+        html += '          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/></svg>';
+        html += '          <span>No QR Selected</span>';
+        html += '        </div>';
+        html += '        <span class="banglaqr-scan-hint" style="font-size: 11px; color: #64748b; margin-top: 6px; display: block; line-height: 1.4; ' + (qrCodeUrl ? '' : 'display:none;') + '">' + oi_banglaqr_admin_params.i18n_scan_hint + '</span>';
         html += '      </div>';
 
         // Right Column: Inputs
@@ -288,7 +477,9 @@ jQuery(document).ready(function ($) {
             // Sync and show the large scanner preview
             var $largeWrapper = $panel.find('.banglaqr-large-qr-preview-wrapper');
             $largeWrapper.find('.banglaqr-large-qr-preview-img').attr('src', imageUrl);
-            $largeWrapper.show();
+            $largeWrapper.find('.banglaqr-large-qr-preview-box').css('display', 'flex');
+            $largeWrapper.find('.banglaqr-large-qr-empty-box').hide();
+            $largeWrapper.find('.banglaqr-scan-hint').show();
 
             serializeData();
         });
@@ -350,14 +541,18 @@ jQuery(document).ready(function ($) {
             // Sync and show the large scanner preview
             var $largeWrapper = $panel.find('.banglaqr-large-qr-preview-wrapper');
             $largeWrapper.find('.banglaqr-large-qr-preview-img').attr('src', url);
-            $largeWrapper.show();
+            $largeWrapper.find('.banglaqr-large-qr-preview-box').css('display', 'flex');
+            $largeWrapper.find('.banglaqr-large-qr-empty-box').hide();
+            $largeWrapper.find('.banglaqr-scan-hint').show();
         } else {
             $previewBox.html('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#94a3b8" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>');
             $tabPreview.html('<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#94a3b8" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>');
 
             var $largeWrapper = $panel.find('.banglaqr-large-qr-preview-wrapper');
             $largeWrapper.find('.banglaqr-large-qr-preview-img').attr('src', '');
-            $largeWrapper.hide();
+            $largeWrapper.find('.banglaqr-large-qr-preview-box').hide();
+            $largeWrapper.find('.banglaqr-large-qr-empty-box').css('display', 'flex');
+            $largeWrapper.find('.banglaqr-scan-hint').hide();
         }
     });
 
@@ -521,9 +716,89 @@ jQuery(document).ready(function ($) {
     });
 
     // Ensure table data is freshly serialized on settings form submission
-    $(document).on('submit', 'form#mainform, form', function () {
+    $(document).on('submit', 'form#mainform', function () {
         serializeData();
     });
+
+    // =========================================================================
+    // 6. Segmented Tab Navigation & Quick Header Save Actions
+    // =========================================================================
+    function switchAdminTab(tabName) {
+        if (!tabName) tabName = 'general';
+
+        // Update tab buttons state
+        $('.banglaqr-tab-btn').removeClass('is-active').attr('aria-selected', 'false');
+        $('.banglaqr-tab-btn[data-tab="' + tabName + '"]').addClass('is-active').attr('aria-selected', 'true');
+
+        // Show/hide sections
+        if (tabName === 'all') {
+            $('[data-tab-content]').show();
+        } else {
+            $('[data-tab-content]').hide();
+            var $target = $('[data-tab-content="' + tabName + '"]');
+            if ($target.length) {
+                $target.fadeIn(150);
+            } else {
+                $('[data-tab-content]').show();
+            }
+        }
+
+        // Persist tab in localStorage
+        try {
+            localStorage.setItem('oi_banglaqr_active_tab', tabName);
+        } catch (e) {}
+    }
+
+    // Tab button click
+    $(document).on('click', '.banglaqr-tab-btn', function (e) {
+        e.preventDefault();
+        var tab = $(this).data('tab');
+        switchAdminTab(tab);
+    });
+
+    // Metric pill shortcut click
+    $(document).on('click', '.banglaqr-metric-pill[data-tab-target]', function (e) {
+        e.preventDefault();
+        var target = $(this).data('tab-target');
+        switchAdminTab(target);
+
+        // Smooth scroll to target section
+        var $targetSection = $('[data-tab-content="' + target + '"]');
+        if ($targetSection.length) {
+            $('html, body').animate({
+                scrollTop: $targetSection.offset().top - 90
+            }, 250);
+        }
+    });
+
+    // Header Quick Save button
+    $(document).on('click', '#banglaqr-header-save-btn', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        $btn.prop('disabled', true).find('span').text(oi_banglaqr_admin_params.i18n_saving || 'Saving...');
+
+        // Trigger WooCommerce settings save button
+        var $saveBtn = $('form#mainform').find('button[name="save"], input[type="submit"][name="save"]').first();
+        if ($saveBtn.length) {
+            $saveBtn.trigger('click');
+        } else {
+            $('form#mainform').trigger('submit');
+        }
+    });
+
+    // Restore saved active tab on load
+    if ($('.banglaqr-tabs-nav').length) {
+        var savedTab = 'general';
+        try {
+            savedTab = localStorage.getItem('oi_banglaqr_active_tab') || 'general';
+        } catch (e) {}
+
+        if ($('.banglaqr-tab-btn[data-tab="' + savedTab + '"]').length) {
+            switchAdminTab(savedTab);
+        } else {
+            switchAdminTab('general');
+        }
+    }
 
     // Initial render
     renderTable();
