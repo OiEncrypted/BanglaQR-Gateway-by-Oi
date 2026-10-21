@@ -1,14 +1,16 @@
 ---
-name: "🐛 Bug Report"
-about: Report a defect or unexpected behavior to help improve BanglaQR Gateway by Oi
+name: "\U0001F41B Bug Report"
+about: Report a defect or unexpected behavior to help improve BanglaQR Gateway by
+  Oi
 title: "[BUG] "
-labels: ["bug"]
-assignees: ""
+labels: bug
+assignees: ''
+
 ---
 
 > [!NOTE]
-> **Before submitting:** Please verify that the issue has not already been reported by searching [existing issues](https://github.com/Oi-Technologies-Official/BanglaQR-Payment-Gateway-by-Oi/issues).  
-> If you have discovered a **security vulnerability**, please do **NOT** open a public issue. Follow our [Security Policy](https://github.com/Oi-Technologies-Official/BanglaQR-Payment-Gateway-by-Oi/blob/main/SECURITY.md) and report privately to **support@oitech.com.bd**.
+> **Before submitting:** Please verify that the issue has not already been reported by searching [existing issues](https://github.com/OiEncrypted/BanglaQR-Gateway-by-Oi/issues).  
+> If you have discovered a **security vulnerability**, please do **NOT** open a public issue. Follow our [Security Policy](https://github.com/OiEncrypted/BanglaQR-Gateway-by-Oi/blob/main/SECURITY.md) and report privately to **support@oitech.com.bd**.
 
 ## 🐛 Problem Description
 <!-- A clear and concise description of what the bug is. What happened versus what you expected to happen? -->

@@ -2,8 +2,9 @@
 name: "✨ Feature Request"
 about: Propose a new feature, improvement, or idea for BanglaQR Gateway by Oi
 title: "[FEATURE] "
-labels: ["enhancement"]
-assignees: ""
+labels: enhancement
+assignees: ''
+
 ---
 
 > [!TIP]
